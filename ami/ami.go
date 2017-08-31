@@ -1,4 +1,5 @@
 package ami
+
 //go:generate stringer -type=CommandType -output=strings.go
 
 import (
@@ -125,6 +126,9 @@ func (self *Command) Action() string {
 func (self *Command) Event() string {
 	return self.GetString("Event")
 }
+func (self *Command) Message() string {
+	return self.GetString("Message")
+}
 
 func (self *Command) GetString(key string) string {
 	return self.Headers[key].(string)
@@ -212,7 +216,7 @@ func (self *ami) fetch() {
 				log.WithError(err).WithField("headers", headers).Warnf("Build command failed")
 				continue
 			}
-			log.Debugf("Recv %v %s", command.Type, command.Name())
+			log.WithField("headers", command.Headers).Debugf("Recv %v %s", command.Type, command.Name())
 			self.recv <- command
 			headers = nil
 		} else {
@@ -260,9 +264,13 @@ func (self *ami) dispatch() {
 					log.WithField("ActionId", r.Headers["ActionID"]).Warnf("Failed to parse ActionId")
 					continue
 				}
+				if r.Name() == "Error" {
+					err = errors.New(r.Message())
+				}
 				if cb, ok := self.cbs[i]; ok {
 					cb <- CommandResponse{
 						Response: r,
+						Err:      err,
 					}
 				} else {
 					log.WithField("ActionId", i).Warnf("No callback found for action")
