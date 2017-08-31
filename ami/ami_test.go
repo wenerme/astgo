@@ -1,8 +1,8 @@
 package ami
 
 import (
-	"testing"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestParseHeader(t *testing.T) {
@@ -44,5 +44,5 @@ func TestBuildAnyCommand(t *testing.T) {
 	})
 	assert.Equal(command.Type, Action)
 
-	assert.Equal("Action: Login\r\nUsername: abc\r\nSecret: def\r\n\r\n",buildHeaders(command.Headers))
+	assert.Equal("Action: Login\r\nUsername: abc\r\nSecret: def\r\n\r\n", buildHeaders(command.Headers))
 }

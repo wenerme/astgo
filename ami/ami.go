@@ -3,17 +3,17 @@ package ami
 //go:generate stringer -type=CommandType -output=strings.go
 
 import (
-	"net"
 	"bufio"
-	"regexp"
 	"github.com/pkg/errors"
+	"net"
+	"regexp"
 
-	"fmt"
-	"strings"
 	"bytes"
+	"fmt"
 	"reflect"
-	"time"
 	"strconv"
+	"strings"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -21,7 +21,7 @@ import (
 type CommandType int
 
 const (
-	Action   CommandType = iota + 1
+	Action CommandType = iota + 1
 	Response
 	Event
 )
@@ -96,7 +96,7 @@ func Dial(addr string, config Config) (AMI, error) {
 		return nil, err
 	}
 	if res.Response() != "Success" {
-		return nil, errors.New(res.GetString("Message"));
+		return nil, errors.New(res.GetString("Message"))
 	}
 
 	success = true
@@ -137,7 +137,7 @@ func (self *Command) GetString(key string) string {
 type ami struct {
 	con           net.Conn
 	scanner       *bufio.Scanner
-	serverVersion string;
+	serverVersion string
 	send          chan *_cmd
 	recv          chan *Command
 	cbs           map[int]chan CommandResponse
@@ -363,7 +363,7 @@ func buildAnyCommand(any interface{}) (*Command, error) {
 	headers[match[2]] = match[1]
 
 	// NOTE Should I sort the key ?
-	for i := 0; i < val.NumField(); i ++ {
+	for i := 0; i < val.NumField(); i++ {
 		field := val.Type().Field(i)
 		headers[field.Name] = val.Field(i).Interface()
 	}
