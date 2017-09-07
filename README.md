@@ -42,7 +42,7 @@ func main() {
 	}
 
 	// Change to you own number
-	res, err := con.WriteCommandAsync(ami.OriginateAction{
+	res, err := con.WriteCommandSync(ami.OriginateAction{
 		Channel:  "sip/9001!9001@wener.me!9002@wener.me",
 		CallerID: "wener <9001>",
 		Exten:    "9002",

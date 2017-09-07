@@ -43,7 +43,7 @@ type CommandResponse struct {
 type AMI interface {
 	ServerVersion() string
 	WriteCommand(interface{}) <-chan CommandResponse
-	WriteCommandAsync(interface{}) (*Command, error)
+	WriteCommandSync(interface{}) (*Command, error)
 }
 
 type Config struct {
@@ -88,7 +88,7 @@ func Dial(addr string, config Config) (AMI, error) {
 	ami.subs = config.Listeners
 	go ami.start()
 
-	res, err := ami.WriteCommandAsync(LoginAction{
+	res, err := ami.WriteCommandSync(LoginAction{
 		Username: config.Username,
 		Secret:   config.Secret,
 	})
@@ -160,7 +160,7 @@ func (self *ami) ServerVersion() string {
 	return self.serverVersion
 }
 
-func (self *ami) WriteCommandAsync(command interface{}) (*Command, error) {
+func (self *ami) WriteCommandSync(command interface{}) (*Command, error) {
 	res := <-self.WriteCommand(command)
 	return res.Response, res.Err
 }
