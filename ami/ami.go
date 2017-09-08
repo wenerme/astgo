@@ -115,23 +115,42 @@ func (self *Command) Name() string {
 		return "UNKNOWN"
 	}
 }
+
+// Response type
 func (self *Command) Response() string {
 	return self.GetString("Response")
 }
 
+// Action name
 func (self *Command) Action() string {
 	return self.GetString("Action")
 }
 
+// Event name
 func (self *Command) Event() string {
 	return self.GetString("Event")
 }
+
+// Message in response
 func (self *Command) Message() string {
 	return self.GetString("Message")
 }
 
+// Check is this a success response
+func (self *Command) IsSuccess() bool {
+	return self.Response() == "Success"
+}
+
+// Empty for not found
 func (self *Command) GetString(key string) string {
-	return self.Headers[key].(string)
+	v, _ := self.Headers[key].(string)
+	return v
+}
+
+// 0 for error or not found
+func (self *Command) GetInt(key string) int {
+	v, _ := strconv.Atoi(key)
+	return v
 }
 
 type ami struct {

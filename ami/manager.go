@@ -156,7 +156,7 @@ type SIPnotifyAction struct {
 	//
 	// reqtured
 	Channel string
-	// At least one variable pair must be specified. name= value
+	// At least one variable pair must be specified. name=value
 	//
 	// reqtured
 	Variable string
@@ -412,7 +412,7 @@ type MixMonitorMuteAction struct {
 }
 
 // Record a call and mix the audio during the recording. Use of StopMixMonitor is required
-//       to guarantee the audio file is available for processing during dialplan execution.
+// to guarantee the audio file is available for processing during dialplan execution.
 // This action records the audio on the current channel to the specified file.
 // Vars:Var:MIXMONITOR_FILENAME ->
 type MixMonitorAction struct {
@@ -423,7 +423,7 @@ type MixMonitorAction struct {
 	// Is the name of the file created in the monitor spool directory. Defaults to the same name as the channel (with slashes replaced with dashes). This argument is optional if you specify to record unidirectional audio with either the r(filename) or t(filename) options in the options field. If neither MIXMONITOR_FILENAME or this parameter is set, the mixed stream won't be recorded.
 	File string
 	// Options that apply to the MixMonitor in the same way as they would apply if invoked from the MixMonitor application. For a list of available options, see the documentation for the mixmonitor application.
-	options string
+	Options string `astgo:"options"`
 	// Will be executed when the recording is over. Any strings matching `^{X}` will be unescaped to `X`. All variables will be evaluated at the time MixMonitor is called.
 	Command string
 }
@@ -781,6 +781,9 @@ type HangupAction struct {
 
 // List channel status.
 // Will return the status information of each channel along with the value for the specified channel variables.
+//
+// response StatusComplete
+// response-list Status
 type StatusAction struct {
 	// The name of the channel to query for status.
 	Channel string
@@ -794,7 +797,7 @@ type StatusAction struct {
 
 // Sets a channel variable or function value.
 // This command can be used to set the value of channel variables or dialplan functions.
-// NOTE: If a channel name is not provided then the variable is considered global.
+// NOTE:  If a channel name is not provided then the variable is considered global.
 //
 // seealso Getvar
 type SetvarAction struct {
@@ -812,7 +815,7 @@ type SetvarAction struct {
 
 // Gets a channel variable or function value.
 // Get the value of a channel variable or function return.
-// NOTE: If a channel name is not provided then the variable is considered global.
+// NOTE:  If a channel name is not provided then the variable is considered global.
 //
 // seealso Setvar
 type GetvarAction struct {
@@ -838,7 +841,7 @@ type GetConfigAction struct {
 	Filename string
 	// Category in configuration file.
 	Category string
-	// A comma separated list of name_regex= value_regex expressions which will cause only categories whose variables match all expressions to be considered. The special variable name `TEMPLATES` can be used to control whether templates are included. Passing `include` as the value will include templates along with normal categories. Passing `restrict` as the value will restrict the operation to ONLY templates. Not specifying a `TEMPLATES` expression results in the default behavior which is to not include templates.
+	// A comma separated list of name_regex=value_regex expressions which will cause only categories whose variables match all expressions to be considered. The special variable name `TEMPLATES` can be used to control whether templates are included. Passing `include` as the value will include templates along with normal categories. Passing `restrict` as the value will restrict the operation to ONLY templates. Not specifying a `TEMPLATES` expression results in the default behavior which is to not include templates.
 	Filter string
 }
 
@@ -856,7 +859,7 @@ type GetConfigJSONAction struct {
 	Filename string
 	// Category in configuration file.
 	Category string
-	// ref: xpointer(/docs/manager[@name='GetConfig']/syntax/parameter[@name='Filter']/para[1])
+	// A comma separated list of name_regex=value_regex expressions which will cause only categories whose variables match all expressions to be considered. The special variable name `TEMPLATES` can be used to control whether templates are included. Passing `include` as the value will include templates along with normal categories. Passing `restrict` as the value will restrict the operation to ONLY templates. Not specifying a `TEMPLATES` expression results in the default behavior which is to not include templates.
 	Filter string
 }
 
@@ -884,42 +887,30 @@ type UpdateConfigAction struct {
 	// 0's represent 6 digit number beginning with 000000.
 	//
 	// ENUM: NewCat,RenameCat,DelCat,EmptyCat,Update,Delete,Append,Insert,
-	// name: Action-000000
-	Action string
+	Action_000000 string `astgo:"Action-000000"`
 	// Category to operate on.
-	// ref: xpointer(/docs/manager[@name='UpdateConfig']/syntax/parameter[@name='Action-000000']/para[2])
-	//
-	// name: Cat-000000
-	Cat string
+	// 0's represent 6 digit number beginning with 000000.
+	Cat_000000 string `astgo:"Cat-000000"`
 	// Variable to work on.
-	// ref: xpointer(/docs/manager[@name='UpdateConfig']/syntax/parameter[@name='Action-000000']/para[2])
-	//
-	// name: Var-000000
-	Var string
+	// 0's represent 6 digit number beginning with 000000.
+	Var_000000 string `astgo:"Var-000000"`
 	// Value to work on.
-	// ref: xpointer(/docs/manager[@name='UpdateConfig']/syntax/parameter[@name='Action-000000']/para[2])
-	//
-	// name: Value-000000
-	Value string
+	// 0's represent 6 digit number beginning with 000000.
+	Value_000000 string `astgo:"Value-000000"`
 	// Extra match required to match line.
-	// ref: xpointer(/docs/manager[@name='UpdateConfig']/syntax/parameter[@name='Action-000000']/para[2])
-	//
-	// name: Match-000000
-	Match string
+	// 0's represent 6 digit number beginning with 000000.
+	Match_000000 string `astgo:"Match-000000"`
 	// Line in category to operate on (used with delete and insert actions).
-	// ref: xpointer(/docs/manager[@name='UpdateConfig']/syntax/parameter[@name='Action-000000']/para[2])
-	//
-	// name: Line-000000
-	Line string
+	// 0's represent 6 digit number beginning with 000000.
+	Line_000000 string `astgo:"Line-000000"`
 	// A comma separated list of action-specific options.
 	//
 	// The following actions share the same options...
-	// ref: xpointer(/docs/manager[@name='UpdateConfig']/syntax/parameter[@name='Action-000000']/para[2])
+	// 0's represent 6 digit number beginning with 000000.
 	//
 	// ENUM: NewCat,
 	// ENUM: RenameCat,DelCat,EmptyCat,Update,Delete,Append,Insert,
-	// name: Options-000000
-	Options string
+	Options_000000 string `astgo:"Options-000000"`
 }
 
 // Creates an empty file in the configuration directory.
@@ -999,7 +990,7 @@ type AtxferAction struct {
 }
 
 // Originate a call.
-// Generates an outgoing call to a Extension/Context/ Priority or Application/ Data
+// Generates an outgoing call to a Extension/Context/Priority or Application/Data
 //
 // seealso OriginateResponse
 type OriginateAction struct {
@@ -1096,7 +1087,7 @@ type AbsoluteTimeoutAction struct {
 //
 // seealso MailboxCount
 type MailboxStatusAction struct {
-	// Full mailbox ID mailbox@ vm-context.
+	// Full mailbox ID mailbox@vm-context.
 	//
 	// reqtured
 	Mailbox string
@@ -1113,7 +1104,7 @@ type MailboxStatusAction struct {
 //
 // seealso MailboxStatus
 type MailboxCountAction struct {
-	// Full mailbox ID mailbox@ vm-context.
+	// Full mailbox ID mailbox@vm-context.
 	//
 	// reqtured
 	Mailbox string
@@ -1176,13 +1167,18 @@ type CoreStatusAction struct {
 // Send a reload event.
 //
 // seealso ModuleLoad
-type ReloadAction struct {
+type Reload_1Action struct {
 	// Name of the module to reload.
 	Module string
 }
 
+func (*Reload_1Action) OriginalName() string { return "Reload" }
+
 // List currently active channels.
 // List currently defined channels and some information about them.
+//
+// response CoreShowChannelsComplete
+// response-list CoreShowChannel
 type CoreShowChannelsAction struct {
 }
 
@@ -1243,13 +1239,9 @@ type AOCMessageAction struct {
 	// ENUM: NA,FREE,Currency,Unit,
 	ChargeType string
 	// This represents the amount of units charged. The ETSI AOC standard specifies that this value along with the optional UnitType value are entries in a list. To accommodate this these values take an index value starting at 0 which can be used to generate this list of unit entries. For Example, If two unit entires were required this could be achieved by setting the paramter UnitAmount(0)=1234 and UnitAmount(1)=5678. Note that UnitAmount at index 0 is required when ChargeType=Unit, all other entries in the list are optional.
-	//
-	// name: UnitAmount(0)
-	UnitAmount string
+	UnitAmount_0_ string `astgo:"UnitAmount(0)"`
 	// Defines the type of unit. ETSI AOC standard specifies this as an integer value between 1 and 16, but this value is left open to accept any positive integer. Like the UnitAmount parameter, this value represents a list entry and has an index parameter that starts at 0.
-	//
-	// name: UnitType(0)
-	UnitType string
+	UnitType_0_ string `astgo:"UnitType(0)"`
 	// Specifies the currency's name. Note that this value is truncated after 10 characters.
 	CurrencyName string
 	// Specifies the charge unit amount as a positive integer. This value is required when ChargeType==Currency.
@@ -1333,6 +1325,8 @@ type BridgeListAction struct {
 // seealso BridgeDestroy
 // seealso BridgeKick
 // seealso BridgeList
+// response BridgeInfoComplete
+// response-list BridgeInfoChannel
 type BridgeInfoAction struct {
 	// The unique ID of the bridge about which to retrieve information.
 	//
@@ -1348,12 +1342,14 @@ type BridgeInfoAction struct {
 // seealso BridgeKick
 // seealso BridgeList
 // seealso BridgeDestroy
-type BridgeDestroyAction struct {
+type BridgeDestroy_1Action struct {
 	// The unique ID of the bridge to destroy.
 	//
 	// reqtured
 	BridgeUniqueid string
 }
+
+func (*BridgeDestroy_1Action) OriginalName() string { return "BridgeDestroy" }
 
 // Kick a channel from a bridge.
 // The channel is removed from the bridge.
@@ -1375,12 +1371,16 @@ type BridgeKickAction struct {
 // Send an out of call message to an endpoint.
 type MessageSendAction struct {
 	// The URI the message is to be sent to.
-	// ref: xpointer(/docs/info[@name='MessageToInfo'])
+	// INFO: Specifying a prefix of `sip:` will send the message as a SIP MESSAGE request.
+	// INFO: Specifying a prefix of `pjsip:` will send the message as a SIP MESSAGE request.
+	// INFO: Specifying a prefix of `xmpp:` will send the message as an XMPP chat message.
 	//
 	// reqtured
 	To string
 	// A From URI for the message if needed for the message technology being used to send this message.
-	// ref: xpointer(/docs/info[@name='MessageFromInfo'])
+	// INFO: The `from` parameter can be a configured peer name or in the form of "display-name" &lt;URI&gt;.
+	// INFO: The `from` parameter can be a configured endpoint or in the form of "display-name" &lt;URI&gt;.
+	// INFO: Specifying a prefix of `xmpp:` will specify the account defined in `xmpp.conf` to send the message from. Note that this field is required for XMPP messages.
 	From string
 	// The message body text. This must not contain any newlines as that conflicts with the AMI protocol.
 	Body string
@@ -1405,6 +1405,8 @@ type ShowDialPlanAction struct {
 // seealso ExtensionState
 // seealso HINT
 // seealso EXTENSION_STATE
+// response ExtensionStateListComplete
+// response-list ExtensionStatus
 type ExtensionStateListAction struct {
 }
 
@@ -1480,6 +1482,8 @@ type FAXStatsAction struct {
 //
 // seealso DeviceStateChange
 // seealso DEVICE_STATE
+// response DeviceStateListComplete
+// response-list DeviceStateChange
 type DeviceStateListAction struct {
 }
 
@@ -1489,6 +1493,8 @@ type DeviceStateListAction struct {
 // seealso PresenceState
 // seealso PresenceStatus
 // seealso PRESENCE_STATE
+// response PresenceStateListComplete
+// response-list PresenceStateChange
 type PresenceStateListAction struct {
 }
 
@@ -1576,7 +1582,10 @@ type MWIGetAction struct {
 // Delete selected mailboxes.
 // Delete the specified mailboxes.
 type MWIDeleteAction struct {
-	// REF: MWIGet.Mailbox	Mailbox string
+	// Mailbox ID in the form of /regex/ for all mailboxes matching the regular expression. Otherwise it is for a specific mailbox.
+	//
+	// reqtured
+	Mailbox string
 }
 
 // Update the mailbox message counts.
@@ -1603,11 +1612,17 @@ type PJSIPQualifyAction struct {
 
 // Lists PJSIP endpoints.
 // Provides a listing of all endpoints. For each endpoint an `EndpointList` event is raised that contains relevant attributes and status information. Once all endpoints have been listed an `EndpointListComplete` event is issued.
+//
+// response EndpointListComplete
+// response-list EndpointList
 type PJSIPShowEndpointsAction struct {
 }
 
 // Detail listing of an endpoint and its objects.
 // Provides a detailed listing of options for a given endpoint. Events are issued showing the configuration and status of the endpoint and associated objects. These events include `EndpointDetail`, `AorDetail`, `AuthDetail`, `TransportDetail`, and `IdentifyDetail`. Some events may be listed multiple times if multiple objects are associated (for instance AoRs). Once all detail events have been raised a final `EndpointDetailComplete` event is issued.
+//
+// response EndpointDetailComplete
+// response-list EndpointDetail,IdentifyDetail,ContactStatusDetail,AuthDetail,TransportDetail,AorDetail
 type PJSIPShowEndpointAction struct {
 	// The endpoint to list.
 	//
@@ -1624,7 +1639,7 @@ type PJSIPNotifyAction struct {
 	Endpoint string
 	// Abritrary URI to which to send the NOTIFY.
 	URI string
-	// Appends variables as headers/content to the NOTIFY. If the variable is named `Content`, then the value will compose the body of the message if another variable sets `Content-Type`. name= value
+	// Appends variables as headers/content to the NOTIFY. If the variable is named `Content`, then the value will compose the body of the message if another variable sets `Content-Type`. name=value
 	//
 	// reqtured
 	Variable string
