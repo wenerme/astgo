@@ -100,7 +100,7 @@ type MCIDEvent struct {
 // The channel snapshot is present if the Status value is `AGENT_IDLE` or `AGENT_ONCALL`.
 //
 // seealso Agents
-type Agents_1Event struct {
+type AgentsEvent struct {
 	// Agent ID of the agent.
 	Agent string
 	// User friendly name of the agent.
@@ -120,8 +120,6 @@ type Agents_1Event struct {
 	// Present if Status value is `AGENT_IDLE` or `AGENT_ONCALL`.
 	LoggedInTime string
 }
-
-func (*Agents_1Event) OriginalName() string { return "Agents" }
 
 // Final response event in a series of events to the Agents AMI action.
 //
@@ -187,7 +185,7 @@ type MeetmeTalkingEvent struct {
 }
 
 // Raised when a MeetMe user is muted or unmuted.
-type MeetmeMute_1Event struct {
+type MeetmeMuteEvent struct {
 	// The identifier for the MeetMe conference.
 	Meetme string
 	// The identifier of the MeetMe user who joined.
@@ -198,8 +196,6 @@ type MeetmeMute_1Event struct {
 	// ENUM: on,off,
 	Status string
 }
-
-func (*MeetmeMute_1Event) OriginalName() string { return "MeetmeMute" }
 
 // Raised when a notification is sent out by a MiniVoiceMail application
 type MiniVoiceMailEvent struct {
@@ -649,18 +645,16 @@ type ConfbridgeRecordEvent struct {
 //
 // seealso ConfbridgeRecord
 // seealso ConfBridge
-type ConfbridgeStopRecord_1Event struct {
+type ConfbridgeStopRecordEvent struct {
 	// The name of the Confbridge conference.
 	Conference string
 }
-
-func (*ConfbridgeStopRecord_1Event) OriginalName() string { return "ConfbridgeStopRecord" }
 
 // Raised when a Confbridge participant mutes.
 //
 // seealso ConfbridgeUnmute
 // seealso ConfBridge
-type ConfbridgeMute_1Event struct {
+type ConfbridgeMuteEvent struct {
 	// The name of the Confbridge conference.
 	Conference string
 	// Identifies this user as an admin user.
@@ -668,14 +662,12 @@ type ConfbridgeMute_1Event struct {
 	// ENUM: Yes,No,
 	Admin string
 }
-
-func (*ConfbridgeMute_1Event) OriginalName() string { return "ConfbridgeMute" }
 
 // Raised when a confbridge participant unmutes.
 //
 // seealso ConfbridgeMute
 // seealso ConfBridge
-type ConfbridgeUnmute_1Event struct {
+type ConfbridgeUnmuteEvent struct {
 	// The name of the Confbridge conference.
 	Conference string
 	// Identifies this user as an admin user.
@@ -683,8 +675,6 @@ type ConfbridgeUnmute_1Event struct {
 	// ENUM: Yes,No,
 	Admin string
 }
-
-func (*ConfbridgeUnmute_1Event) OriginalName() string { return "ConfbridgeUnmute" }
 
 // Raised when a confbridge participant begins or ends talking.
 //
@@ -820,7 +810,7 @@ type AOC_SEvent struct {
 	SpecialCode string
 }
 
-func (*AOC_SEvent) OriginalName() string { return "AOC-S" }
+func (AOC_SEvent) OriginalName() string { return "AOC-S" }
 
 // Raised when an Advice of Charge message is sent during a call.
 //
@@ -849,7 +839,7 @@ type AOC_DEvent struct {
 	TypeOf     string
 }
 
-func (*AOC_DEvent) OriginalName() string { return "AOC-D" }
+func (AOC_DEvent) OriginalName() string { return "AOC-D" }
 
 // Raised when an Advice of Charge message is sent at the end of a call.
 //
@@ -882,7 +872,7 @@ type AOC_EEvent struct {
 	TypeOf     string
 }
 
-func (*AOC_EEvent) OriginalName() string { return "AOC-E" }
+func (AOC_EEvent) OriginalName() string { return "AOC-E" }
 
 // Raised when all Asterisk initialization procedures have finished.
 type FullyBootedEvent struct {
@@ -984,7 +974,7 @@ type LogChannel_1Event struct {
 	Reason  string
 }
 
-func (*LogChannel_1Event) OriginalName() string { return "LogChannel" }
+func (LogChannel_1Event) OriginalName() string { return "LogChannel" }
 
 type StatusEvent StatusResponse
 
@@ -1134,14 +1124,12 @@ type NewstateEvent struct {
 // seealso SoftHangupRequest
 // seealso HangupRequest
 // seealso Newstate
-type Hangup_1Event struct {
+type HangupEvent struct {
 	// A numeric cause code for why the channel was hung up.
 	Cause string
 	// A description of why the channel was hung up.
 	Cause_txt string `astgo:"Cause-txt"`
 }
-
-func (*Hangup_1Event) OriginalName() string { return "Hangup" }
 
 // Raised when a hangup is requested.
 //
@@ -1941,17 +1929,15 @@ type InvalidTransportEvent struct {
 //
 // seealso UserEvent
 // seealso UserEvent
-type UserEvent_1Event struct {
+type UserEventEvent struct {
 	// The event name, as specified in the dialplan.
 	UserEvent string
 }
 
-func (*UserEvent_1Event) OriginalName() string { return "UserEvent" }
-
 // Raised when a blind transfer is complete.
 //
 // seealso BlindTransfer
-type BlindTransfer_1Event struct {
+type BlindTransferEvent struct {
 	// Indicates if the transfer was successful or if it failed.
 	// NOTE: A result of `Success` does not necessarily mean that a target was succesfully contacted. It means that a party was succesfully placed into the dialplan at the expected location.
 	//
@@ -1966,8 +1952,6 @@ type BlindTransfer_1Event struct {
 	// Destination extension for the blind transfer.
 	Extension string
 }
-
-func (*BlindTransfer_1Event) OriginalName() string { return "BlindTransfer" }
 
 // Raised when an attended transfer is complete.
 // The headers in this event attempt to describe all the major details of the attended transfer. The two transferer channels and the two bridges are determined based on their chronological establishment. So consider that Alice calls Bob, and then Alice transfers the call to Voicemail. The transferer and bridge headers would be arranged as follows:
@@ -2015,14 +1999,12 @@ type AgentLoginEvent struct {
 // Raised when an Agent has logged off.
 //
 // seealso AgentLogin
-type AgentLogoff_1Event struct {
+type AgentLogoffEvent struct {
 	// Agent ID of the agent.
 	Agent string
 	// The number of seconds the agent was logged in.
 	Logintime string
 }
-
-func (*AgentLogoff_1Event) OriginalName() string { return "AgentLogoff" }
 
 // Raised when talking is detected on a channel.
 //
@@ -2264,7 +2246,7 @@ type FAXSessionsCompleteEvent struct {
 }
 
 // Raised in response to FAXSession manager command
-type FAXSession_1Event struct {
+type FAXSessionEvent struct {
 	// The numerical identifier for this particular session
 	SessionNumber string
 	// FAX session operation type
@@ -2295,10 +2277,8 @@ type FAXSession_1Event struct {
 	TotalBadLines string
 }
 
-func (*FAXSession_1Event) OriginalName() string { return "FAXSession" }
-
 // Raised in response to FAXStats manager command
-type FAXStats_1Event struct {
+type FAXStatsEvent struct {
 	// Number of active FAX sessions
 	//
 	// reqtured
@@ -2325,12 +2305,10 @@ type FAXStats_1Event struct {
 	FailedFAXes string
 }
 
-func (*FAXStats_1Event) OriginalName() string { return "FAXStats" }
-
 // Raised in response to a MWIGet command.
 //
 // seealso MWIGet
-type MWIGet_1Event struct {
+type MWIGetEvent struct {
 	// Specific mailbox ID.
 	Mailbox string
 	// The number of old messages in the mailbox.
@@ -2338,8 +2316,6 @@ type MWIGet_1Event struct {
 	// The number of new messages in the mailbox.
 	NewMessages string
 }
-
-func (*MWIGet_1Event) OriginalName() string { return "MWIGet" }
 
 // Raised in response to a MWIGet command.
 //

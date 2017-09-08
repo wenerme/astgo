@@ -784,7 +784,7 @@ type HangupAction struct {
 //
 // response StatusComplete
 // response-list Status
-type Status_1Action struct {
+type StatusAction struct {
 	// The name of the channel to query for status.
 	Channel string
 	// Comma `,` separated list of variable to include.
@@ -794,8 +794,6 @@ type Status_1Action struct {
 	// ENUM: true,false,
 	AllVariables string
 }
-
-func (*Status_1Action) OriginalName() string { return "Status" }
 
 // Sets a channel variable or function value.
 // This command can be used to set the value of channel variables or dialplan functions.
@@ -1169,12 +1167,10 @@ type CoreStatusAction struct {
 // Send a reload event.
 //
 // seealso ModuleLoad
-type Reload_1Action struct {
+type ReloadAction struct {
 	// Name of the module to reload.
 	Module string
 }
-
-func (*Reload_1Action) OriginalName() string { return "Reload" }
 
 // List currently active channels.
 // List currently defined channels and some information about them.
@@ -1344,14 +1340,12 @@ type BridgeInfoAction struct {
 // seealso BridgeKick
 // seealso BridgeList
 // seealso BridgeDestroy
-type BridgeDestroy_1Action struct {
+type BridgeDestroyAction struct {
 	// The unique ID of the bridge to destroy.
 	//
 	// reqtured
 	BridgeUniqueid string
 }
-
-func (*BridgeDestroy_1Action) OriginalName() string { return "BridgeDestroy" }
 
 // Kick a channel from a bridge.
 // The channel is removed from the bridge.

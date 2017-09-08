@@ -16,6 +16,7 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/wenerme/astgo/util"
 )
 
 type CommandType int
@@ -36,6 +37,7 @@ type Command struct {
 }
 
 type CommandResponse struct {
+	Action   string
 	Response *Command
 	Err      error
 }
@@ -44,6 +46,7 @@ type AMI interface {
 	ServerVersion() string
 	WriteCommand(interface{}) <-chan CommandResponse
 	WriteCommandSync(interface{}) (*Command, error)
+	WriteCommandResponse(interface{}) interface{}
 }
 
 type Config struct {
@@ -179,6 +182,20 @@ func (self *ami) ServerVersion() string {
 	return self.serverVersion
 }
 
+func (self *ami) WriteCommandResponse(command interface{}) interface{} {
+	res := <-self.WriteCommand(command)
+	if res.Err != nil {
+		panic(res.Err)
+	}
+	if rt, ok := command.(HasResponseType); ok {
+		err := util.SetStruct(rt, res.Response.Headers)
+		if err != nil {
+			panic(res.Err)
+		}
+		return rt
+	}
+	return res
+}
 func (self *ami) WriteCommandSync(command interface{}) (*Command, error) {
 	res := <-self.WriteCommand(command)
 	return res.Response, res.Err
@@ -189,7 +206,8 @@ func (self *ami) WriteCommand(command interface{}) <-chan CommandResponse {
 	ch := make(chan CommandResponse, 1)
 	if err != nil {
 		ch <- CommandResponse{
-			Err: err,
+			Action: cmd.Name(),
+			Err:    err,
 		}
 	} else {
 		c := &_cmd{
@@ -262,7 +280,8 @@ func (self *ami) dispatch() {
 			_, err := self.con.Write([]byte(content))
 			if err != nil {
 				c.response <- CommandResponse{
-					Err: err,
+					Action: c.command.Action(),
+					Err:    err,
 				}
 			} else {
 				self.cbs[self.aid] = c.response
