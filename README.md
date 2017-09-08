@@ -5,8 +5,10 @@ Libs for Go to work with Asterisk
 ## Features
 * AMI
     * Async/Sync Command
-    * Generated Command with document
     * Event Handler
+    * Generated Command with document
+    * Generated Event with document
+    * Generated Command response with document
 
 ## AMI
 

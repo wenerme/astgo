@@ -784,7 +784,7 @@ type HangupAction struct {
 //
 // response StatusComplete
 // response-list Status
-type StatusAction struct {
+type Status_1Action struct {
 	// The name of the channel to query for status.
 	Channel string
 	// Comma `,` separated list of variable to include.
@@ -794,6 +794,8 @@ type StatusAction struct {
 	// ENUM: true,false,
 	AllVariables string
 }
+
+func (*Status_1Action) OriginalName() string { return "Status" }
 
 // Sets a channel variable or function value.
 // This command can be used to set the value of channel variables or dialplan functions.

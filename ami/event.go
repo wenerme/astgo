@@ -794,19 +794,6 @@ type CELEvent struct {
 	Extra string
 }
 
-// Raised when a variable is shared between channels.
-//
-// seealso SHARED
-type VarSet_1Event struct {
-	// The SHARED variable being set.
-	// NOTE: The variable name will always be enclosed with `SHARED()`
-	Variable string
-	// The new value of the variable.
-	Value string
-}
-
-func (*VarSet_1Event) OriginalName() string { return "VarSet" }
-
 // Raised when an Advice of Charge message is sent at the beginning of a call.
 //
 // seealso AOC-D
@@ -999,50 +986,9 @@ type LogChannel_1Event struct {
 
 func (*LogChannel_1Event) OriginalName() string { return "LogChannel" }
 
-// Raised in response to a Status command.
-//
-// seealso Status
-type Status_1Event struct {
-	// Type of channel
-	Type string
-	// Dialed number identifier
-	DNID string
-	// Absolute lifetime of the channel
-	TimeToHangup string
-	// Identifier of the bridge the channel is in, may be empty if not in one
-	BridgeID string
-	Linkedid string
-	// Application currently executing on the channel
-	Application string
-	// Data given to the currently executing channel
-	Data string
-	// Media formats the connected party is willing to send or receive
-	Nativeformats string
-	// Media formats that frames from the channel are received in
-	Readformat string
-	// Translation path for media received in native formats
-	Readtrans string
-	// Media formats that frames to the channel are accepted in
-	Writeformat string
-	// Translation path for media sent to the connected party
-	Writetrans string
-	// Configured call group on the channel
-	Callgroup string
-	// Configured pickup group on the channel
-	Pickupgroup string
-	// Number of seconds the channel has been active
-	Seconds string
-}
+type StatusEvent StatusResponse
 
-func (*Status_1Event) OriginalName() string { return "Status" }
-
-// Raised in response to a Status command.
-//
-// seealso Status
-type StatusCompleteEvent struct {
-	// Number of Status events returned
-	Items string
-}
+type StatusCompleteEvent StatusCompleteResponse
 
 // Raised in response to an Originate command.
 //
@@ -2056,16 +2002,6 @@ type AttendedTransferEvent struct {
 	// NOTE:  This header is only present when DestType is `Threeway`
 	DestTransfererChannel string
 }
-
-// Raised when a variable is set to a particular value.
-type VarSet_2Event struct {
-	// The variable being set.
-	Variable string
-	// The new value of the variable.
-	Value string
-}
-
-func (*VarSet_2Event) OriginalName() string { return "VarSet" }
 
 // Raised when an Agent has logged in.
 //
