@@ -976,8 +976,6 @@ type LogChannel_1Event struct {
 
 func (LogChannel_1Event) OriginalName() string { return "LogChannel" }
 
-type StatusEvent StatusResponse
-
 type StatusCompleteEvent StatusCompleteResponse
 
 // Raised in response to an Originate command.

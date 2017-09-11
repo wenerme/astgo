@@ -11,7 +11,7 @@ type StatusCompleteResponse struct {
 // Raised in response to a Status command.
 //
 // seealso Status
-type StatusResponse struct {
+type StatusEvent struct {
 	// Type of channel
 	Type string
 	// Dialed number identifier
@@ -45,14 +45,12 @@ type StatusResponse struct {
 
 type CoreShowChannelsCompleteResponse CoreShowChannelsCompleteEvent
 
-type CoreShowChannelResponse CoreShowChannelEvent
-
 // Information about a bridge.
 type BridgeInfoCompleteResponse struct {
 }
 
 // Information about a channel in a bridge.
-type BridgeInfoChannelResponse struct {
+type BridgeInfoChannelEvent struct {
 }
 
 // Indicates the end of the list the current known extension states.
@@ -63,8 +61,6 @@ type ExtensionStateListCompleteResponse struct {
 	ListItems string
 }
 
-type ExtensionStatusResponse ExtensionStatusEvent
-
 // Indicates the end of the list the current known extension states.
 type DeviceStateListCompleteResponse struct {
 	// Conveys the status of the event list.
@@ -72,8 +68,6 @@ type DeviceStateListCompleteResponse struct {
 	// Conveys the number of statuses reported.
 	ListItems string
 }
-
-type DeviceStateChangeResponse DeviceStateChangeEvent
 
 // Indicates the end of the list the current known extension states.
 type PresenceStateListCompleteResponse struct {
@@ -83,30 +77,14 @@ type PresenceStateListCompleteResponse struct {
 	ListItems string
 }
 
-type PresenceStateChangeResponse PresenceStateChangeEvent
-
 // Provide final information about an endpoint list.
 type EndpointListCompleteResponse struct {
 	EventList string
 	ListItems string
 }
 
-type EndpointListResponse EndpointListEvent
-
 // Provide final information about endpoint details.
 type EndpointDetailCompleteResponse struct {
 	EventList string
 	ListItems string
 }
-
-type EndpointDetailResponse EndpointDetailEvent
-
-type IdentifyDetailResponse IdentifyDetailEvent
-
-type ContactStatusDetailResponse ContactStatusDetailEvent
-
-type AuthDetailResponse AuthDetailEvent
-
-type TransportDetailResponse TransportDetailEvent
-
-type AorDetailResponse AorDetailEvent
