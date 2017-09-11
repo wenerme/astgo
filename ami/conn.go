@@ -27,10 +27,6 @@ const (
 	Event
 )
 
-type Pack interface {
-	GetType() CommandType
-}
-
 type Command struct {
 	Type    CommandType
 	Headers map[string]interface{}
@@ -59,6 +55,8 @@ type Conn interface {
 type DialConf struct {
 	Username  string
 	Secret    string
+	Reconnect bool
+	Debug     bool
 	Listeners []chan<- *Command
 }
 
@@ -68,30 +66,34 @@ func Connect(addr string) (c Conn, err error) {
 
 // Connect to server
 func connect(addr string) (c *_con, err error) {
-	con, err := net.Dial("tcp", addr)
-	if err != nil {
-		return nil, err
+	con := newCon()
+	con.addr = addr
+	return con, con.connect()
+}
+
+func (self *_con) connect() (err error) {
+	if self.done {
+		return errors.New("Connection has bean closed")
 	}
 
-	var cn *_con
+	con, err := net.DialTimeout("tcp", self.addr, time.Second*10)
+	if err != nil {
+		return err
+	}
+
 	defer func() {
 		if err != nil {
 			log.WithError(err).Warn("AMI Connect Failed")
-			if cn != nil {
-				cn.Close()
-			} else {
-				con.Close()
-			}
+			self.close()
 		}
 	}()
 
 	scanner := bufio.NewScanner(con)
-	cn = newCon()
 	if scanner.Scan() {
 		version := scanner.Text()
 		match := regexp.MustCompile("Asterisk Call Manager/([0-9.]+)").FindStringSubmatch(version)
 		if len(match) > 1 {
-			cn.serverVersion = match[1]
+			self.serverVersion = match[1]
 		} else {
 			err = errors.Errorf("Invalid server version: %s", version)
 			return
@@ -101,39 +103,84 @@ func connect(addr string) (c *_con, err error) {
 		err = scanner.Err()
 		return
 	}
-	cn.scanner = scanner
-	cn.con = con
-	go cn.start()
+	self.scanner = scanner
+	self.con = con
+	go self.start()
 
-	return cn, nil
+	if self.username != "" {
+		if res := self.WriteCommandResponse(LoginAction{
+			Username: self.username,
+			Secret:   self.secret,
+		}).(*GeneralResponse); !res.IsSuccess() {
+			err = res.ToError()
+			return
+		}
+	}
+
+	if self.autoReconnect {
+		go self.reconnect()
+	}
+
+	return nil
+}
+func (self *_con) Ping() error {
+	_, err := self.WriteCommandSync(PingAction{})
+	return err
+}
+func (self *_con) reconnect() {
+	if self.broken {
+		log.Warn("AMI Reconnect routine already started")
+		return
+	}
+
+	log.Debug("AMI Start reconnect routine")
+	self.reconnection = true
+	tick := time.Tick(10 * time.Second)
+	for !self.done {
+		if self.broken {
+			if err := self.connect(); err != nil {
+				log.WithError(err).Warn("Reconnect failed, try again later")
+			} else {
+				log.Info("Reconnect success")
+				self.broken = false
+				go self.fetch()
+			}
+		}
+
+		select {
+		case <-tick:
+			if self.broken {
+				continue
+			}
+			if err := self.Ping(); err != nil {
+				log.WithError(err).Warn("Ping failed")
+			}
+		case <-self.doneCh:
+			break
+		case <-self.brokenCh:
+			self.broken = true
+			log.Debug("Detect broken")
+			if err := self.con.Close(); err != nil {
+				log.WithError(err).Warn("Close broken connection")
+			}
+			self.con = nil
+		}
+	}
+	log.Debug("AMI Stop reconnect routine")
 }
 
 // Connect and Auth
 func Dial(addr string, conf DialConf) (conn Conn, err error) {
-	var c *_con
-	c, err = connect(addr)
-	if err != nil {
-		return nil, err
-	}
+	con := newCon()
+	con.addr = addr
+	con.username = conf.Username
+	con.secret = conf.Secret
+	con.autoReconnect = conf.Reconnect
+	con.debug = conf.Debug
 
-	defer func() {
-		if err != nil {
-			c.Close()
-		}
-	}()
+	con.Subscribe(conf.Listeners...)
 
-	c.Subscribe(conf.Listeners...)
-
-	// Login
-	if gr := c.WriteCommandResponse(LoginAction{
-		Username: conf.Username,
-		Secret:   conf.Secret,
-	}).(*GeneralResponse); !gr.IsSuccess() {
-		err = gr.ToError()
-		return
-	}
-
-	return c, nil
+	return con, con.connect()
 }
 
 func (self *Command) Name() string {
@@ -174,6 +221,14 @@ func (self *Command) IsSuccess() bool {
 	return self.Response() == "Success"
 }
 
+// return nil if success
+func (self *Command) ToError() error {
+	if self.IsSuccess() {
+		return nil
+	}
+	return errors.New(self.Message())
+}
+
 // Empty for not found
 func (self *Command) GetString(key string) string {
 	v, _ := self.Headers[key].(string)
@@ -187,16 +242,23 @@ func (self *Command) GetInt(key string) int {
 }
 
 type _con struct {
+	autoReconnect bool
+	reconnection  bool
+	addr          string
+	username      string
+	secret        string
 	con           net.Conn
 	scanner       *bufio.Scanner
 	serverVersion string
-	send          chan *_cmd
+	send          chan *_request
 	recv          chan *Command
-	cbs           map[int]chan CommandResponse
+	cbs           map[int]*_request
 	aid           int
 	subs          []chan<- *Command
 	doneCh        chan bool
-	done          bool
+	broken        bool        // Connection broken
+	brokenCh      chan bool   // Connection broken
+	done          bool        // Closed
 	dispatchAct   chan func() // Do something in dispatch goroutine
 	debug         bool
 }
@@ -204,9 +266,10 @@ type _con struct {
 func newCon() *_con {
 	return &_con{
 		recv:        make(chan *Command, 2048),
-		send:        make(chan *_cmd, 1024),
-		cbs:         make(map[int]chan CommandResponse),
+		send:        make(chan *_request, 1024),
+		cbs:         make(map[int]*_request),
 		doneCh:      make(chan bool, 1),
+		brokenCh:    make(chan bool, 5),
 		dispatchAct: make(chan func(), 2),
 	}
 }
@@ -237,6 +300,13 @@ func (self *_con) WriteCommandResponse(command interface{}) interface{} {
 			if res.Err != nil {
 				panic(res.Err)
 			}
+
+		} else if res.Response == nil {
+			// No response, error only
+			r := &GeneralResponse{}
+			r.Message = res.Err.Error()
+			r.Response = "Error"
+			return r
 		}
 
 		err := util.SetStruct(rt, res.Response.Headers)
@@ -258,26 +328,36 @@ func (self *_con) WriteCommandSync(command interface{}) (*Command, error) {
 
 func (self *_con) WriteCommand(command interface{}) <-chan CommandResponse {
 	cmd, err := buildAnyCommand(command)
-	ch := make(chan CommandResponse, 1)
+	ch := make(chan CommandResponse, 2)
 	if err != nil {
 		ch <- CommandResponse{
 			Action: cmd.Name(),
 			Err:    err,
 		}
 	} else {
-		c := &_cmd{
-			response: ch,
+		c := &_request{
+			callback: ch,
 			command:  cmd,
 		}
 		self.send <- c
 	}
-	log.Debugf("Queue Command %s", cmd.Name())
+	if self.debug {
+		log.Debugf("Queue Command %s", cmd.Name())
+	}
 	return ch
 }
 func (self *_con) SetDebug(debug bool) {
 	self.debug = debug
 }
 
+func (self *_con) close() {
+	if self.broken {
+		// Ignore close
+	} else {
+		self.Close()
+	}
+
+}
 func (self *_con) Close() {
 	if err := self.con.Close(); err != nil {
 		log.WithError(err).Warnf("Close connection return error")
@@ -294,15 +374,19 @@ func (self *_con) fetch() {
 	for !self.done {
 		if !scanner.Scan() {
 			if scanner.Err() != nil {
-				log.WithError(scanner.Err()).Warn("Fetch scanner failed")
-				self.Close()
+				log.WithError(scanner.Err()).Warn("Scan failed")
+				self.brokenConnection(scanner.Err())
 				break
 			}
 		}
 		if headers == nil {
 			headers = make(map[string]interface{})
 		}
-		line := scanner.Text()
+		org := scanner.Text()
+		line := strings.Trim(org, "\x00") // after reconnect, got a lot \x00
+		if len(org) != len(line) {
+			continue
+		}
 		if len(line) == 0 {
 			if len(headers) == 0 {
 				continue
@@ -310,7 +394,9 @@ func (self *_con) fetch() {
 
 			command, err := buildCommand(headers)
 			if err != nil {
+				// After reconnect, will got a lot \x00, drop all
 				log.WithError(err).WithField("headers", headers).Warnf("Build command failed")
+				headers = nil
 				continue
 			}
 			if self.debug {
@@ -327,28 +413,58 @@ func (self *_con) fetch() {
 	}
 	log.Debugf("AMI Fetch Stop")
 }
+func (self *_con) brokenConnection(err error) {
+	log.WithError(err).Warn("Connection broken")
+	self.brokenCh <- true
+
+	for i, r := range self.cbs {
+		r.response(CommandResponse{
+			Err: errors.New("Connection broken"),
+		})
+		delete(self.cbs, i)
+	}
+}
 func (self *_con) dispatch() {
 	log.Debugf("AMI Dispatch Start")
-	var c *_cmd
-	ticker := time.Tick(time.Millisecond * 500)
+	var c *_request
+	ticker := time.Tick(time.Second)
 	for {
 		select {
 		case a := <-self.dispatchAct:
 			a()
 		case c = <-self.send:
+			// Drop
+			if self.con == nil {
+				c.response(CommandResponse{
+					Action: c.command.Action(),
+					Err:    errors.New("Connection broken"),
+				})
+				log.WithField("command", c).Warn("Broken connection, Drop command")
+				continue
+			}
 			headers := c.command.Headers
 			self.aid++
+			c.id = self.aid
 			headers["ActionID"] = self.aid
 			content := buildHeaders(headers)
-			log.WithField("content", content).Debugf("Send")
+
+			if self.debug {
+				log.WithField("content", content).Debugf("Send")
+			}
+
+			self.con.SetWriteDeadline(time.Now().Add(5 * time.Second))
 			_, err := self.con.Write([]byte(content))
 			if err != nil {
-				c.response <- CommandResponse{
+				// Connection failed
+				c.response(CommandResponse{
 					Action: c.command.Action(),
 					Err:    err,
-				}
+				})
+				log.WithError(err).Warn("Write command error")
+				self.brokenConnection(err)
 			} else {
-				self.cbs[self.aid] = c.response
+				//log.WithField("len", n).Warn("Write command success")
+				self.cbs[c.id] = c
 			}
 		case r := <-self.recv:
 			switch r.Type {
@@ -362,26 +478,40 @@ func (self *_con) dispatch() {
 				}
 			case Response:
 				i, err := strconv.Atoi(fmt.Sprint(r.Headers["ActionID"]))
+				// 为这部分日志加上 command 信息
+				// noinspection GoImportUsedAsName
+				log := log.WithField("command", r)
 				if err != nil {
 					log.WithField("ActionId", r.Headers["ActionID"]).Warnf("Failed to parse ActionId")
 					continue
 				}
-				if r.Name() == "Error" {
-					err = errors.New(r.Message())
-				}
+				err = r.ToError()
 				if cb, ok := self.cbs[i]; ok {
-					cb <- CommandResponse{
+					cb.response(CommandResponse{
 						Response: r,
 						Err:      err,
-					}
+					})
+					// FIXME 部分命令会响应两次, 例如 Originate Async
+					delete(self.cbs, i)
 				} else {
 					log.WithField("ActionId", i).Warnf("No callback found for action")
 				}
 			default:
 				// Log
-				log.WithField("command", r).Warnf("Invalid command")
+				log.Warnf("Invalid command")
 			}
 		case <-ticker:
+			deadline := time.Now().Add(-30 * time.Second)
+			for i, r := range self.cbs {
+				if r.time.Before(deadline) {
+					r.response(CommandResponse{
+						Err: errors.New("Timeout"),
+					})
+					log.WithField("action", r.command.Action()).WithField("delay", r.time.Sub(deadline).String()).WithField("id", r.id).Warnf("Timing out")
+					delete(self.cbs, i)
+				}
+			}
+
 		case <-self.doneCh:
 			log.Debugf("AMI Dispatch Stop")
 			return
@@ -396,9 +526,11 @@ func (self *_con) start() {
 	go self.dispatch()
 }
 
-type _cmd struct {
+type _request struct {
+	id       int
 	command  *Command
-	response chan CommandResponse
+	callback chan CommandResponse
+	time     time.Time
 }
 
 func parseHeader(str string, headers map[string]interface{}) error {
@@ -439,9 +571,18 @@ func buildHeaders(headers map[string]interface{}) string {
 		case "Response":
 			continue
 		}
+		// Drop null or empty
+		if v == nil {
+			continue
+		}
+		s := fmt.Sprint(v)
+		if s == "" {
+			continue
+		}
+
 		buf.WriteString(k)
 		buf.WriteString(": ")
-		buf.WriteString(fmt.Sprint(v))
+		buf.WriteString(s)
 		buf.WriteString("\r\n")
 	}
 
@@ -486,4 +627,8 @@ func buildCommand(headers map[string]interface{}) (*Command, error) {
 		return nil, errors.New("Unknown command type")
 	}
 	return command, nil
+}
+
+func (self *_request) response(response CommandResponse) {
+	self.callback <- response
 }
