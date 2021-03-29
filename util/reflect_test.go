@@ -1,8 +1,9 @@
-package util
+package util_test
 
 import (
 	"fmt"
 	"github.com/wenerme/astgo/ami"
+	"github.com/wenerme/astgo/util"
 	"testing"
 )
 
@@ -11,7 +12,7 @@ func TestRelName(t *testing.T) {
 	h := make(map[string]interface{})
 	h["Response"] = "Success"
 	h["CallerIDNum"] = "123456"
-	err := SetStruct(s, h)
+	err := util.SetStruct(s, h)
 	if err != nil {
 		panic(err)
 	}

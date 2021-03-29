@@ -6,11 +6,17 @@ Libs for Go to work with Asterisk
 * AMI
     * Async/Sync Command
     * Event Handler
+    * Auto reconnect
     * Generated Command with document
     * Generated Event with document
     * Generated Command response with document
+* ADB
+    * Go ORM for Asterisk Realtime Database
+    * Based on gorm
 
 ## AMI
+
+### Basic
 
 ```go
 package main
@@ -34,7 +40,7 @@ func main() {
 		}
 	}()
 
-	con, err := ami.Dial("192.168.1.2:5038", ami.Config{
+	con, err := ami.Dial("192.168.1.2:5038", ami.DialConf{
 		Username:  "admin",
 		Secret:    "admin",
 		Listeners: []chan<- *ami.Command{ch},
@@ -42,6 +48,9 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+    // Sync, generated action type, generated response type
+    fmt.Println("PING: ", con.WriteCommandResponse(ami.PingAction{}).(*ami.PingResponse).Ping)
 
 	// Change to you own number
 	res, err := con.WriteCommandSync(ami.OriginateAction{
