@@ -1,0 +1,12 @@
+{{/* gotype: github.com/wenerme/astgo/pkg/tools/xmlgen.Type */}}
+{{- define "ami/event"}}
+{{with .Doc}} {{template "comment" (printf "%vEvent %v" $.Name .)}} {{end}}
+type {{.Name}}Event struct {
+  {{- range $_,$field:= .Fields}}
+    {{template "field" $field}}
+  {{- end}}
+}
+func({{.Name}}Event)EventTypeName() string{
+  return "{{.Name}}"
+}
+{{- end}}

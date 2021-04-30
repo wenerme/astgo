@@ -1,0 +1,7 @@
+{{/* gotype: github.com/wenerme/astgo/pkg/tools/xmlgen.Field */}}
+{{- define "field"}}
+{{- with .Doc}}
+  {{template "comment" . | nindent 2}}
+{{- end}}
+  {{.Name}} {{.Type}}
+{{- end}}
