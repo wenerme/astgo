@@ -4,9 +4,10 @@ Libs for Go to work with Asterisk
 
 ## AMI
 
-* Async/Sync Command
-* Event Handler
-* Auto reconnect
+* Async Action
+* Sync Action
+* Event Subscribe
+* Auto Reconnect
 * Generated Action with document
 * Generated Event with document
 * [ ] Generated action Response with document

@@ -10,6 +10,16 @@ const attrActionID = "ActionID"
 
 type RequestOption func(msg *asyncMsg) error
 
+// RequestResponseCallback will case Conn.Request run async, will not timeout
+func RequestResponseCallback(cb func(ctx context.Context, msg *Message, err error)) RequestOption {
+	return func(msg *asyncMsg) error {
+		msg.cb = func(v *asyncMsg) {
+			cb(v.ctx, v.resp, v.err)
+		}
+		return nil
+	}
+}
+
 func (c *Conn) Request(r interface{}, opts ...RequestOption) (resp *Message, err error) {
 	var msg *Message
 	msg, err = ConvertToMessage(r)
@@ -33,13 +43,20 @@ func (c *Conn) Request(r interface{}, opts ...RequestOption) (resp *Message, err
 	}
 
 	msg.SetAttr(attrActionID, async.id)
-	var cancel context.CancelFunc
-	// allowed custom timeout
-	async.ctx, cancel = context.WithTimeout(async.ctx, time.Second*30)
-	defer cancel()
+
+	if async.cb == nil {
+		var cancel context.CancelFunc
+		// allowed custom timeout
+		async.ctx, cancel = context.WithTimeout(async.ctx, time.Second*30)
+		defer cancel()
+	}
 
 	// enqueue
 	c.pending <- async
+
+	if async.cb != nil {
+		return nil, errors.New("Async")
+	}
 
 	select {
 	case <-async.ctx.Done():
