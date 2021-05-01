@@ -26,6 +26,6 @@ type Conn struct {
 	subs    []*subscribe
 	subLoc  sync.Mutex
 
-	boot   chan struct{}
+	boot   chan error
 	booted bool
 }

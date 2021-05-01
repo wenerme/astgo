@@ -115,7 +115,7 @@ func (c *Conn) onRecv(msg *Message) {
 	if !c.booted && msg.Name == "FullyBooted" {
 		c.logger.Info("ami.Conn: FullyBooted")
 		c.booted = true
-		c.boot <- struct{}{}
+		c.boot <- nil
 		close(c.boot)
 	}
 	for _, v := range subs {

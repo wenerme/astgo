@@ -111,10 +111,11 @@ func (c *Conn) Close() error {
 func (c *Conn) dial(addr string) (err error) {
 	conf := c.conf
 	// boot trigger
-	c.boot = make(chan struct{}, 1)
+	c.boot = make(chan error, 1)
 	c.booted = false
 
 	if conf.AllowReconnect {
+		// NOTE reconnect keep pending, but ignore wait async
 		go func() {
 			log := c.logger
 			onErr := conf.OnConnectErr
@@ -127,9 +128,11 @@ func (c *Conn) dial(addr string) (err error) {
 				err = c.dialOnce(addr)
 				if err != nil {
 					log.Sugar().With("err", err).Warn("ami.Conn: dial")
+					c.boot <- err
+					close(c.boot)
 					// reset boot status
 					c.booted = false
-					c.boot = make(chan struct{}, 1)
+					c.boot = make(chan error, 1)
 
 					onErr(c, err)
 					// fixme improve wait strategy
@@ -144,6 +147,11 @@ func (c *Conn) dial(addr string) (err error) {
 				if err != nil {
 					log.Sugar().With("err", err).Warn("ami.Conn: error")
 					onErr(c, err)
+				}
+				// ensure closed
+				if !c.booted {
+					c.boot <- err
+					close(c.boot)
 				}
 			}
 			log.Sugar().Info("ami.Conn: stop reconnect, conn closed")
@@ -237,6 +245,6 @@ func (c *Conn) connect(conn net.Conn) (err error) {
 
 // Boot wait FullyBooted
 // enable reconnect will return immediately, need to wait connection booted
-func (c *Conn) Boot() <-chan struct{} {
+func (c *Conn) Boot() <-chan error {
 	return c.boot
 }
