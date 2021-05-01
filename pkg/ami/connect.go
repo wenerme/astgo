@@ -10,37 +10,20 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 	"net"
-	"os"
 	"regexp"
-	"sync"
 	"sync/atomic"
 	"time"
 )
 
-type Conn struct {
-	g       *errgroup.Group
-	conn    net.Conn
-	reader  *bufio.Reader
-	nextID  func() string
-	pending chan *asyncMsg
-	recv    chan *Message
-	ctx     context.Context
-	closer  context.CancelFunc
+// CustomDialer can be used to specify any dialer, not necessarily
+// a *net.Dialer.
+type CustomDialer interface {
+	Dial(network, address string) (net.Conn, error)
+}
 
-	version string
-	logger  *zap.Logger
-	conf    *ConnectOptions
-	subs    []*subscribe
-	subLoc  sync.Mutex
-}
-type subscribe struct {
-	f      SubscribeFunc
-	ctx    context.Context
-	unsub  bool
-	onSent bool
-	onRecv bool
-}
-type SubscribeFunc func(ctx context.Context, message *Message) bool
+type ConnErrHandler func(*Conn, error)
+type ConnHandler func(*Conn)
+
 type ConnectOptions struct {
 	Context        context.Context
 	Timeout        time.Duration
@@ -48,6 +31,9 @@ type ConnectOptions struct {
 	Username       string // login username
 	Secret         string // login secret
 	Logger         *zap.Logger
+	Dialer         CustomDialer
+	OnConnectErr   ConnErrHandler
+	OnConnected    ConnHandler
 	subscribers    []struct {
 		sub  SubscribeFunc
 		opts []SubscribeOption
@@ -63,22 +49,6 @@ func WithAuth(username string, secret string) ConnectOption {
 	}
 }
 
-type SubscribeOption func(o *subscribe) error
-
-func SubscribeSend() SubscribeOption {
-	return func(o *subscribe) error {
-		o.onSent = true
-		return nil
-	}
-}
-
-func SubscribeContext(ctx context.Context) SubscribeOption {
-	return func(o *subscribe) error {
-		o.ctx = ctx
-		return nil
-	}
-}
-
 func WithSubscribe(cb SubscribeFunc, opts ...SubscribeOption) ConnectOption {
 	return func(c *ConnectOptions) error {
 		c.subscribers = append(c.subscribers, struct {
@@ -89,22 +59,105 @@ func WithSubscribe(cb SubscribeFunc, opts ...SubscribeOption) ConnectOption {
 	}
 }
 func Connect(addr string, opts ...ConnectOption) (conn *Conn, err error) {
-	o := &ConnectOptions{
+	opt := &ConnectOptions{
 		Timeout: 10 * time.Second,
 		Context: context.Background(),
 		Logger:  zap.L(),
 	}
 
 	for _, v := range opts {
-		if err = v(o); err != nil {
+		if err = v(opt); err != nil {
 			return nil, err
 		}
 	}
-	conf := *o
+	if opt.Dialer == nil {
+		opt.Dialer = &net.Dialer{
+			Timeout: opt.Timeout,
+		}
+	}
 
-	c, err := net.DialTimeout("tcp", addr, conf.Timeout)
+	var id uint64
+	conn = &Conn{
+		conf:    opt,
+		logger:  opt.Logger,
+		recv:    make(chan *Message, 4096),
+		pending: make(chan *asyncMsg, 100),
+		nextID: func() string {
+			return fmt.Sprint(atomic.AddUint64(&id, 1))
+		},
+	}
+	for _, sub := range opt.subscribers {
+		_, err = conn.Subscribe(sub.sub, sub.opts...)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return conn, conn.dial(addr)
+}
+
+func (c *Conn) Close() error {
+	if c.closer != nil {
+		c.closed = true
+		c.closer()
+		c.closer = nil
+		return c.g.Wait()
+	}
+	if c.closed {
+		return nil
+	}
+	return errors.New("not init")
+}
+
+func (c *Conn) dial(addr string) (err error) {
+	conf := c.conf
+	// boot trigger
+	c.boot = make(chan struct{}, 1)
+	c.booted = false
+
+	if conf.AllowReconnect {
+		go func() {
+			log := c.logger
+			onErr := conf.OnConnectErr
+			if onErr == nil {
+				onErr = func(conn *Conn, err error) {
+				}
+			}
+			var err error
+			for !c.closed {
+				err = c.dialOnce(addr)
+				if err != nil {
+					log.Sugar().With("err", err).Warn("ami.Conn: dial")
+					// reset boot status
+					c.booted = false
+					c.boot = make(chan struct{}, 1)
+
+					onErr(c, err)
+					// fixme improve wait strategy
+					<-time.NewTimer(time.Second).C
+					continue
+				}
+				if conf.OnConnected != nil {
+					conf.OnConnected(c)
+					log.Sugar().Info("ami.Conn: connected")
+				}
+				err = c.g.Wait()
+				if err != nil {
+					log.Sugar().With("err", err).Warn("ami.Conn: error")
+					onErr(c, err)
+				}
+			}
+			log.Sugar().Info("ami.Conn: stop reconnect, conn closed")
+		}()
+		return nil
+	}
+	return c.dialOnce(addr)
+}
+
+func (c *Conn) dialOnce(addr string) (err error) {
+	conf := c.conf
+	conn, err := conf.Dialer.Dial("tcp", addr)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer func() {
 		if err != nil {
@@ -113,231 +166,8 @@ func Connect(addr string, opts ...ConnectOption) (conn *Conn, err error) {
 			}
 		}
 	}()
-
-	var id uint64
-	conn = &Conn{
-		conf:    &conf,
-		logger:  o.Logger,
-		recv:    make(chan *Message, 4096),
-		pending: make(chan *asyncMsg, 100),
-		nextID: func() string {
-			return fmt.Sprint(atomic.AddUint64(&id, 1))
-		},
-	}
-	for _, sub := range o.subscribers {
-		_, err = conn.Subscribe(sub.sub, sub.opts...)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return conn, conn.connect(c)
+	return c.connect(conn)
 }
-
-const attrActionID = "ActionID"
-
-type RequestOption func(msg *asyncMsg) error
-
-func (c *Conn) Request(r interface{}, opts ...RequestOption) (resp *Message, err error) {
-	var msg *Message
-	msg, err = ConvertToMessage(r)
-	if err != nil {
-		return nil, err
-	}
-	if msg.Type != MessageTypeAction {
-		return nil, errors.Errorf("can only request action: %v", msg.Type)
-	}
-
-	async := &asyncMsg{
-		id:     c.nextID(),
-		msg:    msg,
-		result: make(chan *asyncMsg, 1),
-		ctx:    context.Background(),
-	}
-	for _, opt := range opts {
-		if err = opt(async); err != nil {
-			return
-		}
-	}
-
-	msg.SetAttr(attrActionID, async.id)
-	var cancel context.CancelFunc
-	// allowed custom timeout
-	async.ctx, cancel = context.WithTimeout(async.ctx, time.Second*30)
-	defer cancel()
-
-	c.pending <- async
-
-	select {
-	case <-async.ctx.Done():
-		return nil, async.ctx.Err()
-	case <-async.result:
-		err = async.err
-		if err == nil && async.resp != nil {
-			err = async.resp.Error()
-		}
-		return async.resp, err
-	}
-}
-
-// promise like
-type asyncMsg struct {
-	id     string
-	msg    *Message
-	resp   *Message
-	err    error
-	result chan *asyncMsg
-	cb     func(v *asyncMsg)
-	ctx    context.Context
-}
-
-func (async *asyncMsg) complete() {
-	if async.result != nil {
-		async.result <- async
-		close(async.result)
-	}
-	if async.cb != nil {
-		go func() {
-			async.cb(async)
-		}()
-	}
-}
-
-func (c *Conn) read(ctx context.Context) (err error) {
-	dl := 5 * time.Second
-	log := c.logger
-	log.Debug("start read loop")
-	for {
-		msg := &Message{}
-		err = c.conn.SetReadDeadline(time.Now().Add(dl))
-		if err != nil {
-			return
-		}
-		// todo partial read
-		if err = msg.Read(c.reader); err != nil && !errors.Is(err, os.ErrDeadlineExceeded) {
-			return
-		}
-		// log.Sugar().With("type", msg.Type, "name", msg.Name).Debug("read")
-
-		if msg.Type != "" {
-			c.recv <- msg
-		}
-		if ctx.Err() != nil {
-			return ctx.Err()
-		}
-	}
-}
-func (c *Conn) Close() error {
-	if c.closer != nil {
-		c.closer()
-		c.closer = nil
-		return c.g.Wait()
-	}
-	return errors.New("closed or not init")
-}
-
-func (c *Conn) Subscribe(cb SubscribeFunc, opts ...SubscribeOption) (func(), error) {
-	c.subLoc.Lock()
-	defer c.subLoc.Unlock()
-
-	sub := &subscribe{
-		f:      cb,
-		onRecv: true,
-	}
-	for _, v := range opts {
-		err := v(sub)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	c.subs = append(c.subs, sub)
-
-	return func() {
-		sub.unsub = true
-	}, nil
-}
-func (c *Conn) clean() {
-	c.subLoc.Lock()
-	defer c.subLoc.Unlock()
-	var neo []*subscribe
-	subs := c.subs
-	for _, sub := range subs {
-		if !sub.unsub {
-			neo = append(neo, sub)
-		}
-	}
-	c.subs = neo
-}
-func (c *Conn) onSend(msg *asyncMsg) {
-	subs := c.subs
-
-	for _, v := range subs {
-		if v.unsub || !v.onSent {
-			continue
-		}
-		ctx := v.ctx
-		if ctx == nil {
-			ctx = c.ctx
-		}
-		v.unsub = !v.f(ctx, msg.msg)
-	}
-}
-func (c *Conn) onRecv(msg *Message) {
-	subs := c.subs
-
-	for _, v := range subs {
-		if v.unsub || !v.onRecv {
-			continue
-		}
-		ctx := v.ctx
-		if ctx == nil {
-			ctx = c.ctx
-		}
-		v.unsub = !v.f(ctx, msg)
-	}
-}
-func (c *Conn) loop(ctx context.Context) error {
-	ids := map[string]*asyncMsg{}
-	log := c.logger
-	c.logger.Debug("start event loop")
-	cleanTicker := time.NewTicker(5 * time.Second)
-	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-cleanTicker.C:
-			c.clean()
-		case async := <-c.pending:
-			// send pending message
-			msg := async.msg
-			err := msg.Write(c.conn)
-
-			if err != nil {
-				async.err = err
-				async.complete()
-			} else if async.id != "" {
-				ids[async.id] = async
-			}
-			c.onSend(async)
-		case msg := <-c.recv:
-			// received
-			if msg.Type == MessageTypeResponse {
-				id := msg.AttrString(attrActionID)
-				if id != "" {
-					async := ids[id]
-					if async == nil {
-						log.Sugar().With("id", id).Warn("response untracked")
-					} else {
-						async.resp = msg
-						async.complete()
-					}
-				}
-			}
-			c.onRecv(msg)
-		}
-	}
-}
-
 func (c *Conn) connect(conn net.Conn) (err error) {
 	log := c.logger
 	r := bufio.NewReader(conn)
@@ -403,4 +233,10 @@ func (c *Conn) connect(conn net.Conn) (err error) {
 		log.Info("login success")
 	}
 	return nil
+}
+
+// Boot wait FullyBooted
+// enable reconnect will return immediately, need to wait connection booted
+func (c *Conn) Boot() <-chan struct{} {
+	return c.boot
 }

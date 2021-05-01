@@ -7,7 +7,6 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	amimodels "github.com/wenerme/astgo/pkg/ami/models"
-	"go.uber.org/zap"
 	"io"
 	"strings"
 )
@@ -47,7 +46,7 @@ func (m *Message) Read(r *bufio.Reader) (err error) {
 	default:
 		return errors.Errorf("invalid message type: %q", sp[0])
 	}
-	zap.S().With("type", m.Type, "name", m.Name).Info("read message")
+
 	for {
 		line, err = r.ReadString('\n')
 		if err != nil {
