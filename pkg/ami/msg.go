@@ -7,6 +7,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	amimodels "github.com/wenerme/astgo/pkg/ami/models"
+	"go.uber.org/zap"
 	"io"
 	"strings"
 )
@@ -46,7 +47,7 @@ func (m *Message) Read(r *bufio.Reader) (err error) {
 	default:
 		return errors.Errorf("invalid message type: %q", sp[0])
 	}
-
+	zap.S().With("type", m.Type, "name", m.Name).Info("read message")
 	for {
 		line, err = r.ReadString('\n')
 		if err != nil {
@@ -76,7 +77,7 @@ func (m *Message) Write(w io.Writer) (err error) {
 	return
 }
 
-func (m *Message) Format() string {
+func (m Message) Format() string {
 	b := bytes.Buffer{}
 	_ = m.Write(&b)
 	return b.String()
@@ -129,8 +130,11 @@ func MustConvertToMessage(in interface{}) (msg *Message) {
 }
 func ConvertToMessage(in interface{}) (msg *Message, err error) {
 	msg = &Message{}
-
 	switch a := in.(type) {
+	case Message:
+		return &a, err
+	case *Message:
+		return a, err
 	case amimodels.Action:
 		msg.Type = MessageTypeAction
 		msg.Name = a.ActionTypeName()

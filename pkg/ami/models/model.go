@@ -5,6 +5,6 @@ type Event interface {
 }
 type Action interface {
 	ActionTypeName() string
-	GetActionID() string
-	SetActionID(actionID string)
+	//GetActionID() string
+	//SetActionID(actionID string) // need ptr
 }

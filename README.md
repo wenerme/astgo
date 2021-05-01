@@ -10,6 +10,9 @@ Libs for Go to work with Asterisk
 * Generated Action with document
 * Generated Event with document
 * [ ] Generated action Response with document
+* [ ] Generated client - Request -> Response
+* Improved doc
+  * Proper handle para to doc
 
 ```go
 package main

@@ -21,7 +21,7 @@ type Conn struct {
 	g       *errgroup.Group
 	conn    net.Conn
 	reader  *bufio.Reader
-	id      int64
+	nextID  func() string
 	pending chan *asyncMsg
 	recv    chan *Message
 	ctx     context.Context
@@ -114,11 +114,15 @@ func Connect(addr string, opts ...ConnectOption) (conn *Conn, err error) {
 		}
 	}()
 
+	var id uint64
 	conn = &Conn{
 		conf:    &conf,
 		logger:  o.Logger,
 		recv:    make(chan *Message, 4096),
 		pending: make(chan *asyncMsg, 100),
+		nextID: func() string {
+			return fmt.Sprint(atomic.AddUint64(&id, 1))
+		},
 	}
 	for _, sub := range o.subscribers {
 		_, err = conn.Subscribe(sub.sub, sub.opts...)
@@ -131,26 +135,35 @@ func Connect(addr string, opts ...ConnectOption) (conn *Conn, err error) {
 
 const attrActionID = "ActionID"
 
-func (c *Conn) Request(ctx context.Context, msg *Message) (resp *Message, err error) {
-	if ctx == nil {
-		ctx = context.Background()
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, time.Second*10)
-		defer cancel()
-	}
+type RequestOption func(msg *asyncMsg) error
 
+func (c *Conn) Request(r interface{}, opts ...RequestOption) (resp *Message, err error) {
+	var msg *Message
+	msg, err = ConvertToMessage(r)
+	if err != nil {
+		return nil, err
+	}
 	if msg.Type != MessageTypeAction {
 		return nil, errors.Errorf("can only request action: %v", msg.Type)
 	}
 
-	id := fmt.Sprint(atomic.AddInt64(&c.id, 1))
-	msg.SetAttr(attrActionID, id)
 	async := &asyncMsg{
-		id:     id,
+		id:     c.nextID(),
 		msg:    msg,
 		result: make(chan *asyncMsg, 1),
-		ctx:    ctx,
+		ctx:    context.Background(),
 	}
+	for _, opt := range opts {
+		if err = opt(async); err != nil {
+			return
+		}
+	}
+
+	msg.SetAttr(attrActionID, async.id)
+	var cancel context.CancelFunc
+	// allowed custom timeout
+	async.ctx, cancel = context.WithTimeout(async.ctx, time.Second*30)
+	defer cancel()
 
 	c.pending <- async
 
@@ -158,7 +171,11 @@ func (c *Conn) Request(ctx context.Context, msg *Message) (resp *Message, err er
 	case <-async.ctx.Done():
 		return nil, async.ctx.Err()
 	case <-async.result:
-		return async.resp, async.err
+		err = async.err
+		if err == nil && async.resp != nil {
+			err = async.resp.Error()
+		}
+		return async.resp, err
 	}
 }
 
@@ -204,8 +221,7 @@ func (c *Conn) read(ctx context.Context) (err error) {
 		if msg.Type != "" {
 			c.recv <- msg
 		}
-		select {
-		case <-ctx.Done():
+		if ctx.Err() != nil {
 			return ctx.Err()
 		}
 	}
@@ -294,9 +310,7 @@ func (c *Conn) loop(ctx context.Context) error {
 		case async := <-c.pending:
 			// send pending message
 			msg := async.msg
-			log.Sugar().With("type", msg.Type, "name", msg.Name, "attrs", msg.Attributes).Debug("sending")
 			err := msg.Write(c.conn)
-			log.Sugar().With("type", msg.Type, "name", msg.Name).Debug("send")
 
 			if err != nil {
 				async.err = err
@@ -319,7 +333,6 @@ func (c *Conn) loop(ctx context.Context) error {
 					}
 				}
 			}
-			log.Sugar().With("type", msg.Type, "name", msg.Name, "attrs", msg.Attributes).Debug("recv")
 			c.onRecv(msg)
 		}
 	}
@@ -374,10 +387,10 @@ func (c *Conn) connect(conn net.Conn) (err error) {
 	conf := c.conf
 	if conf.Username != "" {
 		var resp *Message
-		resp, err = c.Request(nil, MustConvertToMessage(&amimodels.LoginAction{
+		resp, err = c.Request(amimodels.LoginAction{
 			Username: conf.Username,
 			Secret:   conf.Secret,
-		}))
+		})
 
 		if err != nil {
 			err = errors.Wrap(err, "request login")
