@@ -240,7 +240,9 @@ func (c *Conn) connect(conn net.Conn) (err error) {
 		}
 		log.Info("login success")
 	}
-	return nil
+	// be ready
+	_, err = c.Request(amimodels.PingAction{})
+	return
 }
 
 // Boot wait FullyBooted

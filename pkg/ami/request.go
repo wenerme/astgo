@@ -46,7 +46,7 @@ func (c *Conn) Request(r interface{}, opts ...RequestOption) (resp *Message, err
 
 	if async.cb == nil {
 		var cancel context.CancelFunc
-		// allowed custom timeout
+		// todo allowed custom timeout
 		async.ctx, cancel = context.WithTimeout(async.ctx, time.Second*30)
 		defer cancel()
 	}
