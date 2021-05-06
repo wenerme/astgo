@@ -87,7 +87,7 @@ func (c *Conn) loop(ctx context.Context) (err error) {
 
 			// send pending message
 			msg := async.msg
-			log.Sugar().With("id", async.id, "type", msg.Type, "name", msg.Name).Debug("send message")
+			//log.Sugar().With("id", async.id, "type", msg.Type, "name", msg.Name).Debug("send message")
 
 			err = msg.Write(c.conn)
 

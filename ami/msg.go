@@ -47,22 +47,49 @@ func (m *Message) Read(r *bufio.Reader) (err error) {
 		return errors.Errorf("invalid message type: %q", sp[0])
 	}
 
+	var stack [][]string
 	for {
+		// may contain BOM
 		line, err = r.ReadString('\n')
 		if err != nil {
 			return err
 		}
-		line = strings.TrimSuffix(line, "\r\n")
-		if len(line) == 0 {
+		if line == "\r\n" {
 			break
 		}
 		sp = strings.SplitN(line, ":", 2)
-		if len(sp) != 2 {
-			return errors.Errorf("invalid attr line read(%v: %v): %q", m.Type, m.Name, line)
+
+		switch {
+		case len(sp) == 2 && strings.HasSuffix(line, "\r\n"):
+			// valid line
+			stack = append(stack, sp)
+		case len(stack) == 0 && len(sp) == 2:
+			// first line
+			stack = append(stack, sp)
+		case len(stack) != 0:
+			// continue line
+			stack = append(stack, []string{"", line})
 		}
-		m.Attributes[sp[0]] = strings.TrimSpace(sp[1])
 	}
 
+	var k, v string
+	for _, pair := range stack {
+		switch {
+		case pair[0] != "" && k != "":
+			m.Attributes[k] = strings.TrimSuffix(v, "\r\n")
+			k = ""
+			v = ""
+			fallthrough
+		case pair[0] != "":
+			k = pair[0]
+			v = strings.TrimLeft(pair[1], " ")
+		case pair[0] == "":
+			v += pair[1]
+		}
+	}
+	if k != "" {
+		m.Attributes[k] = strings.TrimSuffix(v, "\r\n")
+	}
 	return
 }
 func (m *Message) Write(w io.Writer) (err error) {
