@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"github.com/stretchr/testify/assert"
-	amimodels "github.com/wenerme/astgo/pkg/ami/models"
+	amimodels "github.com/wenerme/astgo/ami/models"
 	"io"
 	"testing"
 )

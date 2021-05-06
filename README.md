@@ -21,7 +21,7 @@ package main
 import (
   "context"
   "fmt"
-  "github.com/wenerme/astgo/pkg/ami"
+  "github.com/wenerme/astgo/ami"
 )
 
 func main() {

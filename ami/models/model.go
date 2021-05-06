@@ -5,6 +5,8 @@ type Event interface {
 }
 type Action interface {
 	ActionTypeName() string
-	//GetActionID() string
-	//SetActionID(actionID string) // need ptr
+}
+type HasActionID interface {
+	GetActionID() string
+	SetActionID(actionID string)
 }

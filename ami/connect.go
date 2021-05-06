@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	amimodels "github.com/wenerme/astgo/pkg/ami/models"
+	amimodels "github.com/wenerme/astgo/ami/models"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 	"net"
