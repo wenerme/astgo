@@ -78,6 +78,7 @@ func Connect(addr string, opts ...ConnectOption) (conn *Conn, err error) {
 
 	var id uint64
 	conn = &Conn{
+		ctx:     opt.Context,
 		conf:    opt,
 		logger:  opt.Logger,
 		recv:    make(chan *Message, 4096),
@@ -110,12 +111,9 @@ func (c *Conn) Close() error {
 
 func (c *Conn) dial(addr string) (err error) {
 	conf := c.conf
-	// boot trigger
-	c.boot = make(chan error, 1)
-	c.booted = false
 
 	if conf.AllowReconnect {
-		// NOTE reconnect keep pending, but ignore wait async
+		// NOTE reconnect keep pending, but fail all async
 		go func() {
 			log := c.logger
 			onErr := conf.OnConnectErr
@@ -123,16 +121,12 @@ func (c *Conn) dial(addr string) (err error) {
 				onErr = func(conn *Conn, err error) {
 				}
 			}
+
 			var err error
 			for !c.closed {
 				err = c.dialOnce(addr)
 				if err != nil {
 					log.Sugar().With("err", err).Warn("ami.Conn: dial")
-					c.boot <- err
-					close(c.boot)
-					// reset boot status
-					c.booted = false
-					c.boot = make(chan error, 1)
 
 					onErr(c, err)
 					// fixme improve wait strategy
@@ -148,11 +142,7 @@ func (c *Conn) dial(addr string) (err error) {
 					log.Sugar().With("err", err).Warn("ami.Conn: error")
 					onErr(c, err)
 				}
-				// ensure closed
-				if !c.booted {
-					c.boot <- err
-					close(c.boot)
-				}
+				c.g = nil
 			}
 			log.Sugar().Info("ami.Conn: stop reconnect, conn closed")
 		}()
@@ -169,7 +159,7 @@ func (c *Conn) dialOnce(addr string) (err error) {
 	}
 	defer func() {
 		if err != nil {
-			if e := c.Close(); e != nil {
+			if e := conn.Close(); e != nil {
 				err = multierror.Append(err, e)
 			}
 		}
@@ -202,7 +192,6 @@ func (c *Conn) connect(conn net.Conn) (err error) {
 		ctx = context.Background()
 	}
 	c.g, ctx = errgroup.WithContext(ctx)
-	c.ctx = ctx
 	c.g.Go(func() error {
 		return c.read(ctx)
 	})
@@ -228,7 +217,7 @@ func (c *Conn) connect(conn net.Conn) (err error) {
 		resp, err = c.Request(amimodels.LoginAction{
 			Username: conf.Username,
 			Secret:   conf.Secret,
-		})
+		}, RequestTimeout(2*time.Second))
 
 		if err != nil {
 			err = errors.Wrap(err, "request login")
@@ -236,17 +225,13 @@ func (c *Conn) connect(conn net.Conn) (err error) {
 			err = errors.Wrap(resp.Error(), "login")
 		}
 		if err != nil {
+			log.Sugar().With("err", err).Info("login failed")
 			return err
 		}
 		log.Info("login success")
 	}
+	log.Sugar().Debug("do conn check ping")
 	// be ready
 	_, err = c.Request(amimodels.PingAction{})
 	return
-}
-
-// Boot wait FullyBooted
-// enable reconnect will return immediately, need to wait connection booted
-func (c *Conn) Boot() <-chan error {
-	return c.boot
 }

@@ -35,7 +35,7 @@ func (m *Message) Read(r *bufio.Reader) (err error) {
 	line = strings.TrimSuffix(line, "\r\n")
 	sp := strings.SplitN(line, ":", 2)
 	if len(sp) != 2 {
-		return errors.Errorf("invalid line read: %q", line)
+		return errors.Errorf("invalid type line read: %q", line)
 	}
 	m.Type = MessageType(sp[0])
 	m.Name = strings.TrimSpace(sp[1])
@@ -58,7 +58,7 @@ func (m *Message) Read(r *bufio.Reader) (err error) {
 		}
 		sp = strings.SplitN(line, ":", 2)
 		if len(sp) != 2 {
-			return errors.Errorf("invalid line read: %q", line)
+			return errors.Errorf("invalid attr line read(%v: %v): %q", m.Type, m.Name, line)
 		}
 		m.Attributes[sp[0]] = strings.TrimSpace(sp[1])
 	}

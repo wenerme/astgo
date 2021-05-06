@@ -8,14 +8,23 @@ import (
 
 const attrActionID = "ActionID"
 
-type RequestOption func(msg *asyncMsg) error
+type requestOptions struct {
+	Timeout    time.Duration
+	OnComplete func(ctx context.Context, msg *Message, err error)
+}
+type RequestOption func(o *requestOptions) error
+
+func RequestTimeout(d time.Duration) RequestOption {
+	return func(o *requestOptions) error {
+		o.Timeout = d
+		return nil
+	}
+}
 
 // RequestResponseCallback will case Conn.Request run async, will not timeout
 func RequestResponseCallback(cb func(ctx context.Context, msg *Message, err error)) RequestOption {
-	return func(msg *asyncMsg) error {
-		msg.cb = func(v *asyncMsg) {
-			cb(v.ctx, v.resp, v.err)
-		}
+	return func(o *requestOptions) error {
+		o.OnComplete = cb
 		return nil
 	}
 }
@@ -36,9 +45,19 @@ func (c *Conn) Request(r interface{}, opts ...RequestOption) (resp *Message, err
 		result: make(chan *asyncMsg, 1),
 		ctx:    context.Background(),
 	}
+	o := requestOptions{
+		Timeout: time.Second * 30,
+	}
 	for _, opt := range opts {
-		if err = opt(async); err != nil {
+		if err = opt(&o); err != nil {
 			return
+		}
+	}
+
+	onComplete := o.OnComplete
+	if onComplete != nil {
+		async.cb = func(v *asyncMsg) {
+			onComplete(v.ctx, v.resp, v.err)
 		}
 	}
 
@@ -47,7 +66,7 @@ func (c *Conn) Request(r interface{}, opts ...RequestOption) (resp *Message, err
 	if async.cb == nil {
 		var cancel context.CancelFunc
 		// todo allowed custom timeout
-		async.ctx, cancel = context.WithTimeout(async.ctx, time.Second*30)
+		async.ctx, cancel = context.WithTimeout(async.ctx, o.Timeout)
 		defer cancel()
 	}
 
@@ -55,7 +74,7 @@ func (c *Conn) Request(r interface{}, opts ...RequestOption) (resp *Message, err
 	c.pending <- async
 
 	if async.cb != nil {
-		return nil, errors.New("Async")
+		return nil, errors.New("No response yet")
 	}
 
 	select {

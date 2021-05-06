@@ -16,9 +16,13 @@ type asyncMsg struct {
 	result chan *asyncMsg
 	cb     func(v *asyncMsg)
 	ctx    context.Context
+	done   bool
 }
 
 func (async *asyncMsg) complete() {
+	if async.done {
+		return
+	}
 	if async.result != nil {
 		async.result <- async
 		close(async.result)
@@ -28,19 +32,18 @@ func (async *asyncMsg) complete() {
 			async.cb(async)
 		}()
 	}
+	async.done = true
 }
 
 func (c *Conn) read(ctx context.Context) (err error) {
-	dl := 5 * time.Second
 	log := c.logger
 	log.Debug("start read loop")
+	defer func() {
+		log.Debug("done read loop")
+	}()
 	for {
 		msg := &Message{}
-		err = c.conn.SetReadDeadline(time.Now().Add(dl))
-		if err != nil {
-			return
-		}
-		// note partial read should not happen
+
 		if err = msg.Read(c.reader); err != nil && !errors.Is(err, os.ErrDeadlineExceeded) {
 			return
 		}
@@ -54,11 +57,22 @@ func (c *Conn) read(ctx context.Context) (err error) {
 	}
 }
 
-func (c *Conn) loop(ctx context.Context) error {
+func (c *Conn) loop(ctx context.Context) (err error) {
 	ids := map[string]*asyncMsg{}
+	defer func() {
+		for _, v := range ids {
+			v.err = err
+			v.complete()
+		}
+	}()
+
 	log := c.logger
-	c.logger.Debug("start event loop")
 	cleanTicker := time.NewTicker(5 * time.Second)
+
+	c.logger.Debug("start event loop")
+	defer func() {
+		log.Debug("done event loop")
+	}()
 	for {
 		select {
 		case <-ctx.Done():
@@ -66,9 +80,16 @@ func (c *Conn) loop(ctx context.Context) error {
 		case <-cleanTicker.C:
 			c.cleanUnsub()
 		case async := <-c.pending:
+			//err = c.conn.SetDeadline(time.Now().Add(1 * time.Second))
+			//if err != nil {
+			//	return
+			//}
+
 			// send pending message
 			msg := async.msg
-			err := msg.Write(c.conn)
+			log.Sugar().With("id", async.id, "type", msg.Type, "name", msg.Name).Debug("send message")
+
+			err = msg.Write(c.conn)
 
 			if err != nil {
 				async.err = err
@@ -110,14 +131,9 @@ func (c *Conn) onSend(msg *asyncMsg) {
 		v.unsub = !v.f(ctx, msg.msg)
 	}
 }
+
 func (c *Conn) onRecv(msg *Message) {
 	subs := c.subs
-	if !c.booted && msg.Name == "FullyBooted" {
-		c.logger.Info("ami.Conn: FullyBooted")
-		c.booted = true
-		c.boot <- nil
-		close(c.boot)
-	}
 	for _, v := range subs {
 		if v.unsub || !v.onRecv {
 			continue

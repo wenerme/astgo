@@ -25,10 +25,13 @@ import (
 )
 
 func main() {
+  boot := make(chan *ami.Message, 1)
+
   conn, err := ami.Connect(
     "192.168.1.1:5038",
     ami.WithAuth("admin", "admin"), // AMI auth
     // add predefined subscriber
+    ami.WithSubscribe(ami.SubscribeFullyBootedChanOnce(boot)),
     ami.WithSubscribe(func(ctx context.Context, msg *ami.Message) bool {
       fmt.Println(msg.Format()) // log everything
       return true               // keep subscribe
@@ -37,6 +40,8 @@ func main() {
   if err != nil {
     panic(err)
   }
+  <-boot
+  // AMI now FullyBooted
   _ = conn
 }
 ```

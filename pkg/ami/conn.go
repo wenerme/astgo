@@ -25,7 +25,4 @@ type Conn struct {
 	conf    *ConnectOptions
 	subs    []*subscribe
 	subLoc  sync.Mutex
-
-	boot   chan error
-	booted bool
 }
