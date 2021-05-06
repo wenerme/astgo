@@ -29,7 +29,8 @@ func SubscribeFullyBootedChanOnce(c chan *Message) SubscribeFunc {
 	return func(ctx context.Context, msg *Message) bool {
 		if msg.Name == "FullyBooted" {
 			c <- msg
+			return false
 		}
-		return false
+		return true
 	}
 }

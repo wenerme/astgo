@@ -142,6 +142,7 @@ func (c *Conn) onRecv(msg *Message) {
 		if ctx == nil {
 			ctx = c.ctx
 		}
+		// NOTE blocked
 		v.unsub = !v.f(ctx, msg)
 	}
 }
