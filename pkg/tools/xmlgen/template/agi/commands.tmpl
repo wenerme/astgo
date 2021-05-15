@@ -1,0 +1,9 @@
+{{/* gotype: github.com/wenerme/astgo/pkg/tools/xmlgen.Model*/}}
+
+{{- define "agi/commands"}}
+package agimodels
+
+{{range $_,$v := $.AGICommands}}
+  {{template "agi/command" $v}}
+{{end}}
+{{- end}}

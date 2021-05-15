@@ -9,7 +9,8 @@ require (
 	github.com/go-pg/pg v8.0.7+incompatible
 	github.com/google/uuid v1.2.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/huandu/xstrings v1.3.2 // indirect
+	github.com/huandu/xstrings v1.3.2
+	github.com/iancoleman/strcase v0.1.3
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/jinzhu/gorm v1.9.16
 	github.com/mitchellh/copystructure v1.1.2 // indirect

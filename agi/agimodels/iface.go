@@ -30,5 +30,5 @@ func (c *Client) Hangup() error {
 	return c.Handler.Command(HangupCommand{}).Err()
 }
 func (c *Client) GetVariable(name string) (string, error) {
-	return c.Handler.Command(GetVariableCommand{Name: name}).Val()
+	return c.Handler.Command(GetVariableCommand{VariableName: name}).Val()
 }

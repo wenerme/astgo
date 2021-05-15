@@ -19,7 +19,7 @@ import (
 	"github.com/Masterminds/sprig"
 )
 
-//go:embed template/*.tmpl
+//go:embed template/*.tmpl template/**/*.tmpl
 var templateFS embed.FS
 
 func MustParseTemplates() *template.Template {
@@ -30,7 +30,7 @@ func MustParseTemplates() *template.Template {
 			//Funcs(ext).
 			Funcs(sprig.TxtFuncMap()).
 			//Funcs(Funcs).
-			ParseFS(templateFS, "template/*.tmpl"),
+			ParseFS(templateFS, "template/*.tmpl", "template/**/*.tmpl"),
 	)
 	//return &gen.Template{
 	//	Template: tpl,
@@ -47,7 +47,7 @@ func pick(funcs template.FuncMap, names ...string) template.FuncMap {
 	return o
 }
 
-func NewGoGenerator() *Generator {
+func NewAMIGenerator() *Generator {
 	return &Generator{
 		Template:  MustParseTemplates(),
 		Formatter: GoFormatter,
@@ -59,6 +59,18 @@ func NewGoGenerator() *Generator {
 			&GenerateTemplate{
 				Name:       "ami/events",
 				FormatName: "events.go",
+			},
+		},
+	}
+}
+func NewAGIGenerator() *Generator {
+	return &Generator{
+		Template:  MustParseTemplates(),
+		Formatter: GoFormatter,
+		Templates: []TemplateGenerate{
+			&GenerateTemplate{
+				Name:       "agi/commands",
+				FormatName: "commands.go",
 			},
 		},
 	}

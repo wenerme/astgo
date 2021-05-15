@@ -1,0 +1,19 @@
+{{/* gotype: github.com/wenerme/astgo/pkg/tools/xmlgen.AGICommand*/}}
+{{- define "agi/command"}}
+// {{.StructName}}Command {{.Synopsis}}
+type {{.StructName}}Command struct {
+  {{- range $_,$v:=.Syntax.Params}}
+    {{.Name}} string
+  {{- end}}
+  {{with .Syntax.Missing}}
+  // has missing params
+  {{end}}
+}
+func(cmd {{.StructName}}Command)Command(c context.Context) (string, error) {
+  return cmd.CommandString(),nil
+}
+func(cmd {{.StructName}}Command)CommandString()string {
+  return "{{.Name | upper}}"
+}
+
+{{- end}}
