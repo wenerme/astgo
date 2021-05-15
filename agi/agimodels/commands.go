@@ -1,6 +1,10 @@
 package agimodels
 
-import "context"
+import (
+	"context"
+	"fmt"
+	"strings"
+)
 
 // GosubCommand Cause the channel to execute the specified dialplan subroutine.
 type GosubCommand struct {
@@ -11,7 +15,22 @@ type GosubCommand struct {
 }
 
 func (cmd GosubCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	if cmd.Context == "" {
+		return "", fmt.Errorf("field Gosub Context is required")
+	}
+	s = append(s, cmd.Context)
+	if cmd.Extension == "" {
+		return "", fmt.Errorf("field Gosub Extension is required")
+	}
+	s = append(s, cmd.Extension)
+	if cmd.Priority == "" {
+		return "", fmt.Errorf("field Gosub Priority is required")
+	}
+	s = append(s, cmd.Priority)
+	s = append(s, cmd.OptionalArgument)
+	return strings.Join(s, " "), nil
 }
 func (cmd GosubCommand) CommandString() string {
 	return "GOSUB"
@@ -22,7 +41,9 @@ type AnswerCommand struct {
 }
 
 func (cmd AnswerCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	return strings.Join(s, " "), nil
 }
 func (cmd AnswerCommand) CommandString() string {
 	return "ANSWER"
@@ -33,7 +54,9 @@ type AsyncagiBreakCommand struct {
 }
 
 func (cmd AsyncagiBreakCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	return strings.Join(s, " "), nil
 }
 func (cmd AsyncagiBreakCommand) CommandString() string {
 	return "ASYNCAGI BREAK"
@@ -45,7 +68,10 @@ type ChannelStatusCommand struct {
 }
 
 func (cmd ChannelStatusCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	s = append(s, cmd.ChannelName)
+	return strings.Join(s, " "), nil
 }
 func (cmd ChannelStatusCommand) CommandString() string {
 	return "CHANNEL STATUS"
@@ -63,7 +89,22 @@ type ControlStreamFileCommand struct {
 }
 
 func (cmd ControlStreamFileCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	if cmd.FileName == "" {
+		return "", fmt.Errorf("field ControlStreamFile FileName is required")
+	}
+	s = append(s, cmd.FileName)
+	if cmd.EscapeDigits == "" {
+		return "", fmt.Errorf("field ControlStreamFile EscapeDigits is required")
+	}
+	s = append(s, cmd.EscapeDigits)
+	s = append(s, cmd.Skipms)
+	s = append(s, cmd.Ffchar)
+	s = append(s, cmd.Rewchr)
+	s = append(s, cmd.Pausechr)
+	s = append(s, cmd.OffsetMS)
+	return strings.Join(s, " "), nil
 }
 func (cmd ControlStreamFileCommand) CommandString() string {
 	return "CONTROL STREAM FILE"
@@ -76,7 +117,17 @@ type DatabaseDelCommand struct {
 }
 
 func (cmd DatabaseDelCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	if cmd.Family == "" {
+		return "", fmt.Errorf("field DatabaseDel Family is required")
+	}
+	s = append(s, cmd.Family)
+	if cmd.Key == "" {
+		return "", fmt.Errorf("field DatabaseDel Key is required")
+	}
+	s = append(s, cmd.Key)
+	return strings.Join(s, " "), nil
 }
 func (cmd DatabaseDelCommand) CommandString() string {
 	return "DATABASE DEL"
@@ -89,7 +140,14 @@ type DatabaseDeltreeCommand struct {
 }
 
 func (cmd DatabaseDeltreeCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	if cmd.Family == "" {
+		return "", fmt.Errorf("field DatabaseDeltree Family is required")
+	}
+	s = append(s, cmd.Family)
+	s = append(s, cmd.KeyTree)
+	return strings.Join(s, " "), nil
 }
 func (cmd DatabaseDeltreeCommand) CommandString() string {
 	return "DATABASE DELTREE"
@@ -102,7 +160,17 @@ type DatabaseGetCommand struct {
 }
 
 func (cmd DatabaseGetCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	if cmd.Family == "" {
+		return "", fmt.Errorf("field DatabaseGet Family is required")
+	}
+	s = append(s, cmd.Family)
+	if cmd.Key == "" {
+		return "", fmt.Errorf("field DatabaseGet Key is required")
+	}
+	s = append(s, cmd.Key)
+	return strings.Join(s, " "), nil
 }
 func (cmd DatabaseGetCommand) CommandString() string {
 	return "DATABASE GET"
@@ -116,7 +184,21 @@ type DatabasePutCommand struct {
 }
 
 func (cmd DatabasePutCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	if cmd.Family == "" {
+		return "", fmt.Errorf("field DatabasePut Family is required")
+	}
+	s = append(s, cmd.Family)
+	if cmd.Key == "" {
+		return "", fmt.Errorf("field DatabasePut Key is required")
+	}
+	s = append(s, cmd.Key)
+	if cmd.Value == "" {
+		return "", fmt.Errorf("field DatabasePut Value is required")
+	}
+	s = append(s, cmd.Value)
+	return strings.Join(s, " "), nil
 }
 func (cmd DatabasePutCommand) CommandString() string {
 	return "DATABASE PUT"
@@ -129,7 +211,17 @@ type ExecCommand struct {
 }
 
 func (cmd ExecCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	if cmd.Application == "" {
+		return "", fmt.Errorf("field Exec Application is required")
+	}
+	s = append(s, cmd.Application)
+	if cmd.Options == "" {
+		return "", fmt.Errorf("field Exec Options is required")
+	}
+	s = append(s, cmd.Options)
+	return strings.Join(s, " "), nil
 }
 func (cmd ExecCommand) CommandString() string {
 	return "EXEC"
@@ -143,7 +235,15 @@ type GetDataCommand struct {
 }
 
 func (cmd GetDataCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	if cmd.File == "" {
+		return "", fmt.Errorf("field GetData File is required")
+	}
+	s = append(s, cmd.File)
+	s = append(s, cmd.Timeout)
+	s = append(s, cmd.Maxdigits)
+	return strings.Join(s, " "), nil
 }
 func (cmd GetDataCommand) CommandString() string {
 	return "GET DATA"
@@ -156,7 +256,14 @@ type GetFullVariableCommand struct {
 }
 
 func (cmd GetFullVariableCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	if cmd.Expression == "" {
+		return "", fmt.Errorf("field GetFullVariable Expression is required")
+	}
+	s = append(s, cmd.Expression)
+	s = append(s, cmd.ChannelName)
+	return strings.Join(s, " "), nil
 }
 func (cmd GetFullVariableCommand) CommandString() string {
 	return "GET FULL VARIABLE"
@@ -170,7 +277,18 @@ type GetOptionCommand struct {
 }
 
 func (cmd GetOptionCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	if cmd.FileName == "" {
+		return "", fmt.Errorf("field GetOption FileName is required")
+	}
+	s = append(s, cmd.FileName)
+	if cmd.EscapeDigits == "" {
+		return "", fmt.Errorf("field GetOption EscapeDigits is required")
+	}
+	s = append(s, cmd.EscapeDigits)
+	s = append(s, cmd.Timeout)
+	return strings.Join(s, " "), nil
 }
 func (cmd GetOptionCommand) CommandString() string {
 	return "GET OPTION"
@@ -182,7 +300,13 @@ type GetVariableCommand struct {
 }
 
 func (cmd GetVariableCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	if cmd.VariableName == "" {
+		return "", fmt.Errorf("field GetVariable VariableName is required")
+	}
+	s = append(s, cmd.VariableName)
+	return strings.Join(s, " "), nil
 }
 func (cmd GetVariableCommand) CommandString() string {
 	return "GET VARIABLE"
@@ -194,7 +318,10 @@ type HangupCommand struct {
 }
 
 func (cmd HangupCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	s = append(s, cmd.ChannelName)
+	return strings.Join(s, " "), nil
 }
 func (cmd HangupCommand) CommandString() string {
 	return "HANGUP"
@@ -205,7 +332,9 @@ type NoopCommand struct {
 }
 
 func (cmd NoopCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	return strings.Join(s, " "), nil
 }
 func (cmd NoopCommand) CommandString() string {
 	return "NOOP"
@@ -217,7 +346,13 @@ type ReceiveCharCommand struct {
 }
 
 func (cmd ReceiveCharCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	if cmd.Timeout == "" {
+		return "", fmt.Errorf("field ReceiveChar Timeout is required")
+	}
+	s = append(s, cmd.Timeout)
+	return strings.Join(s, " "), nil
 }
 func (cmd ReceiveCharCommand) CommandString() string {
 	return "RECEIVE CHAR"
@@ -229,7 +364,13 @@ type ReceiveTextCommand struct {
 }
 
 func (cmd ReceiveTextCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	if cmd.Timeout == "" {
+		return "", fmt.Errorf("field ReceiveText Timeout is required")
+	}
+	s = append(s, cmd.Timeout)
+	return strings.Join(s, " "), nil
 }
 func (cmd ReceiveTextCommand) CommandString() string {
 	return "RECEIVE TEXT"
@@ -247,7 +388,28 @@ type RecordFileCommand struct {
 }
 
 func (cmd RecordFileCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	if cmd.FileName == "" {
+		return "", fmt.Errorf("field RecordFile FileName is required")
+	}
+	s = append(s, cmd.FileName)
+	if cmd.Format == "" {
+		return "", fmt.Errorf("field RecordFile Format is required")
+	}
+	s = append(s, cmd.Format)
+	if cmd.EscapeDigits == "" {
+		return "", fmt.Errorf("field RecordFile EscapeDigits is required")
+	}
+	s = append(s, cmd.EscapeDigits)
+	if cmd.Timeout == "" {
+		return "", fmt.Errorf("field RecordFile Timeout is required")
+	}
+	s = append(s, cmd.Timeout)
+	s = append(s, cmd.OffsetSamples)
+	s = append(s, cmd.Beep)
+	s = append(s, cmd.SSilence)
+	return strings.Join(s, " "), nil
 }
 func (cmd RecordFileCommand) CommandString() string {
 	return "RECORD FILE"
@@ -260,7 +422,17 @@ type SayAlphaCommand struct {
 }
 
 func (cmd SayAlphaCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	if cmd.Number == "" {
+		return "", fmt.Errorf("field SayAlpha Number is required")
+	}
+	s = append(s, cmd.Number)
+	if cmd.EscapeDigits == "" {
+		return "", fmt.Errorf("field SayAlpha EscapeDigits is required")
+	}
+	s = append(s, cmd.EscapeDigits)
+	return strings.Join(s, " "), nil
 }
 func (cmd SayAlphaCommand) CommandString() string {
 	return "SAY ALPHA"
@@ -273,7 +445,17 @@ type SayDigitsCommand struct {
 }
 
 func (cmd SayDigitsCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	if cmd.Number == "" {
+		return "", fmt.Errorf("field SayDigits Number is required")
+	}
+	s = append(s, cmd.Number)
+	if cmd.EscapeDigits == "" {
+		return "", fmt.Errorf("field SayDigits EscapeDigits is required")
+	}
+	s = append(s, cmd.EscapeDigits)
+	return strings.Join(s, " "), nil
 }
 func (cmd SayDigitsCommand) CommandString() string {
 	return "SAY DIGITS"
@@ -287,7 +469,18 @@ type SayNumberCommand struct {
 }
 
 func (cmd SayNumberCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	if cmd.Number == "" {
+		return "", fmt.Errorf("field SayNumber Number is required")
+	}
+	s = append(s, cmd.Number)
+	if cmd.EscapeDigits == "" {
+		return "", fmt.Errorf("field SayNumber EscapeDigits is required")
+	}
+	s = append(s, cmd.EscapeDigits)
+	s = append(s, cmd.Gender)
+	return strings.Join(s, " "), nil
 }
 func (cmd SayNumberCommand) CommandString() string {
 	return "SAY NUMBER"
@@ -300,7 +493,17 @@ type SayPhoneticCommand struct {
 }
 
 func (cmd SayPhoneticCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	if cmd.String == "" {
+		return "", fmt.Errorf("field SayPhonetic String is required")
+	}
+	s = append(s, cmd.String)
+	if cmd.EscapeDigits == "" {
+		return "", fmt.Errorf("field SayPhonetic EscapeDigits is required")
+	}
+	s = append(s, cmd.EscapeDigits)
+	return strings.Join(s, " "), nil
 }
 func (cmd SayPhoneticCommand) CommandString() string {
 	return "SAY PHONETIC"
@@ -313,7 +516,17 @@ type SayDateCommand struct {
 }
 
 func (cmd SayDateCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	if cmd.Date == "" {
+		return "", fmt.Errorf("field SayDate Date is required")
+	}
+	s = append(s, cmd.Date)
+	if cmd.EscapeDigits == "" {
+		return "", fmt.Errorf("field SayDate EscapeDigits is required")
+	}
+	s = append(s, cmd.EscapeDigits)
+	return strings.Join(s, " "), nil
 }
 func (cmd SayDateCommand) CommandString() string {
 	return "SAY DATE"
@@ -326,7 +539,17 @@ type SayTimeCommand struct {
 }
 
 func (cmd SayTimeCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	if cmd.Time == "" {
+		return "", fmt.Errorf("field SayTime Time is required")
+	}
+	s = append(s, cmd.Time)
+	if cmd.EscapeDigits == "" {
+		return "", fmt.Errorf("field SayTime EscapeDigits is required")
+	}
+	s = append(s, cmd.EscapeDigits)
+	return strings.Join(s, " "), nil
 }
 func (cmd SayTimeCommand) CommandString() string {
 	return "SAY TIME"
@@ -341,7 +564,19 @@ type SayDatetimeCommand struct {
 }
 
 func (cmd SayDatetimeCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	if cmd.Time == "" {
+		return "", fmt.Errorf("field SayDatetime Time is required")
+	}
+	s = append(s, cmd.Time)
+	if cmd.EscapeDigits == "" {
+		return "", fmt.Errorf("field SayDatetime EscapeDigits is required")
+	}
+	s = append(s, cmd.EscapeDigits)
+	s = append(s, cmd.Format)
+	s = append(s, cmd.Timezone)
+	return strings.Join(s, " "), nil
 }
 func (cmd SayDatetimeCommand) CommandString() string {
 	return "SAY DATETIME"
@@ -353,7 +588,13 @@ type SendImageCommand struct {
 }
 
 func (cmd SendImageCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	if cmd.Image == "" {
+		return "", fmt.Errorf("field SendImage Image is required")
+	}
+	s = append(s, cmd.Image)
+	return strings.Join(s, " "), nil
 }
 func (cmd SendImageCommand) CommandString() string {
 	return "SEND IMAGE"
@@ -365,7 +606,13 @@ type SendTextCommand struct {
 }
 
 func (cmd SendTextCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	if cmd.TextToSend == "" {
+		return "", fmt.Errorf("field SendText TextToSend is required")
+	}
+	s = append(s, cmd.TextToSend)
+	return strings.Join(s, " "), nil
 }
 func (cmd SendTextCommand) CommandString() string {
 	return "SEND TEXT"
@@ -377,7 +624,13 @@ type SetAutohangupCommand struct {
 }
 
 func (cmd SetAutohangupCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	if cmd.Time == "" {
+		return "", fmt.Errorf("field SetAutohangup Time is required")
+	}
+	s = append(s, cmd.Time)
+	return strings.Join(s, " "), nil
 }
 func (cmd SetAutohangupCommand) CommandString() string {
 	return "SET AUTOHANGUP"
@@ -389,7 +642,13 @@ type SetCalleridCommand struct {
 }
 
 func (cmd SetCalleridCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	if cmd.Number == "" {
+		return "", fmt.Errorf("field SetCallerid Number is required")
+	}
+	s = append(s, cmd.Number)
+	return strings.Join(s, " "), nil
 }
 func (cmd SetCalleridCommand) CommandString() string {
 	return "SET CALLERID"
@@ -401,7 +660,13 @@ type SetContextCommand struct {
 }
 
 func (cmd SetContextCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	if cmd.DesiredContext == "" {
+		return "", fmt.Errorf("field SetContext DesiredContext is required")
+	}
+	s = append(s, cmd.DesiredContext)
+	return strings.Join(s, " "), nil
 }
 func (cmd SetContextCommand) CommandString() string {
 	return "SET CONTEXT"
@@ -413,7 +678,13 @@ type SetExtensionCommand struct {
 }
 
 func (cmd SetExtensionCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	if cmd.NewExtension == "" {
+		return "", fmt.Errorf("field SetExtension NewExtension is required")
+	}
+	s = append(s, cmd.NewExtension)
+	return strings.Join(s, " "), nil
 }
 func (cmd SetExtensionCommand) CommandString() string {
 	return "SET EXTENSION"
@@ -428,7 +699,13 @@ type SetMusicCommand struct {
 }
 
 func (cmd SetMusicCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	if cmd.Class == "" {
+		return "", fmt.Errorf("field SetMusic Class is required")
+	}
+	s = append(s, cmd.Class)
+	return strings.Join(s, " "), nil
 }
 func (cmd SetMusicCommand) CommandString() string {
 	return "SET MUSIC"
@@ -440,7 +717,13 @@ type SetPriorityCommand struct {
 }
 
 func (cmd SetPriorityCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	if cmd.Priority == "" {
+		return "", fmt.Errorf("field SetPriority Priority is required")
+	}
+	s = append(s, cmd.Priority)
+	return strings.Join(s, " "), nil
 }
 func (cmd SetPriorityCommand) CommandString() string {
 	return "SET PRIORITY"
@@ -453,7 +736,17 @@ type SetVariableCommand struct {
 }
 
 func (cmd SetVariableCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	if cmd.VariableName == "" {
+		return "", fmt.Errorf("field SetVariable VariableName is required")
+	}
+	s = append(s, cmd.VariableName)
+	if cmd.Value == "" {
+		return "", fmt.Errorf("field SetVariable Value is required")
+	}
+	s = append(s, cmd.Value)
+	return strings.Join(s, " "), nil
 }
 func (cmd SetVariableCommand) CommandString() string {
 	return "SET VARIABLE"
@@ -467,7 +760,18 @@ type StreamFileCommand struct {
 }
 
 func (cmd StreamFileCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	if cmd.FileName == "" {
+		return "", fmt.Errorf("field StreamFile FileName is required")
+	}
+	s = append(s, cmd.FileName)
+	if cmd.EscapeDigits == "" {
+		return "", fmt.Errorf("field StreamFile EscapeDigits is required")
+	}
+	s = append(s, cmd.EscapeDigits)
+	s = append(s, cmd.SampleOffset)
+	return strings.Join(s, " "), nil
 }
 func (cmd StreamFileCommand) CommandString() string {
 	return "STREAM FILE"
@@ -479,7 +783,13 @@ type TddModeCommand struct {
 }
 
 func (cmd TddModeCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	if cmd.Boolean == "" {
+		return "", fmt.Errorf("field TddMode Boolean is required")
+	}
+	s = append(s, cmd.Boolean)
+	return strings.Join(s, " "), nil
 }
 func (cmd TddModeCommand) CommandString() string {
 	return "TDD MODE"
@@ -492,7 +802,17 @@ type VerboseCommand struct {
 }
 
 func (cmd VerboseCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	if cmd.Message == "" {
+		return "", fmt.Errorf("field Verbose Message is required")
+	}
+	s = append(s, cmd.Message)
+	if cmd.Level == "" {
+		return "", fmt.Errorf("field Verbose Level is required")
+	}
+	s = append(s, cmd.Level)
+	return strings.Join(s, " "), nil
 }
 func (cmd VerboseCommand) CommandString() string {
 	return "VERBOSE"
@@ -504,7 +824,13 @@ type WaitForDigitCommand struct {
 }
 
 func (cmd WaitForDigitCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	if cmd.Timeout == "" {
+		return "", fmt.Errorf("field WaitForDigit Timeout is required")
+	}
+	s = append(s, cmd.Timeout)
+	return strings.Join(s, " "), nil
 }
 func (cmd WaitForDigitCommand) CommandString() string {
 	return "WAIT FOR DIGIT"
@@ -516,7 +842,13 @@ type SpeechCreateCommand struct {
 }
 
 func (cmd SpeechCreateCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	if cmd.Engine == "" {
+		return "", fmt.Errorf("field SpeechCreate Engine is required")
+	}
+	s = append(s, cmd.Engine)
+	return strings.Join(s, " "), nil
 }
 func (cmd SpeechCreateCommand) CommandString() string {
 	return "SPEECH CREATE"
@@ -529,7 +861,17 @@ type SpeechSetCommand struct {
 }
 
 func (cmd SpeechSetCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	if cmd.Name == "" {
+		return "", fmt.Errorf("field SpeechSet Name is required")
+	}
+	s = append(s, cmd.Name)
+	if cmd.Value == "" {
+		return "", fmt.Errorf("field SpeechSet Value is required")
+	}
+	s = append(s, cmd.Value)
+	return strings.Join(s, " "), nil
 }
 func (cmd SpeechSetCommand) CommandString() string {
 	return "SPEECH SET"
@@ -540,7 +882,9 @@ type SpeechDestroyCommand struct {
 }
 
 func (cmd SpeechDestroyCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	return strings.Join(s, " "), nil
 }
 func (cmd SpeechDestroyCommand) CommandString() string {
 	return "SPEECH DESTROY"
@@ -553,7 +897,17 @@ type SpeechLoadGrammarCommand struct {
 }
 
 func (cmd SpeechLoadGrammarCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	if cmd.GrammarName == "" {
+		return "", fmt.Errorf("field SpeechLoadGrammar GrammarName is required")
+	}
+	s = append(s, cmd.GrammarName)
+	if cmd.PathToGrammar == "" {
+		return "", fmt.Errorf("field SpeechLoadGrammar PathToGrammar is required")
+	}
+	s = append(s, cmd.PathToGrammar)
+	return strings.Join(s, " "), nil
 }
 func (cmd SpeechLoadGrammarCommand) CommandString() string {
 	return "SPEECH LOAD GRAMMAR"
@@ -565,7 +919,13 @@ type SpeechUnloadGrammarCommand struct {
 }
 
 func (cmd SpeechUnloadGrammarCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	if cmd.GrammarName == "" {
+		return "", fmt.Errorf("field SpeechUnloadGrammar GrammarName is required")
+	}
+	s = append(s, cmd.GrammarName)
+	return strings.Join(s, " "), nil
 }
 func (cmd SpeechUnloadGrammarCommand) CommandString() string {
 	return "SPEECH UNLOAD GRAMMAR"
@@ -577,7 +937,13 @@ type SpeechActivateGrammarCommand struct {
 }
 
 func (cmd SpeechActivateGrammarCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	if cmd.GrammarName == "" {
+		return "", fmt.Errorf("field SpeechActivateGrammar GrammarName is required")
+	}
+	s = append(s, cmd.GrammarName)
+	return strings.Join(s, " "), nil
 }
 func (cmd SpeechActivateGrammarCommand) CommandString() string {
 	return "SPEECH ACTIVATE GRAMMAR"
@@ -589,7 +955,13 @@ type SpeechDeactivateGrammarCommand struct {
 }
 
 func (cmd SpeechDeactivateGrammarCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	if cmd.GrammarName == "" {
+		return "", fmt.Errorf("field SpeechDeactivateGrammar GrammarName is required")
+	}
+	s = append(s, cmd.GrammarName)
+	return strings.Join(s, " "), nil
 }
 func (cmd SpeechDeactivateGrammarCommand) CommandString() string {
 	return "SPEECH DEACTIVATE GRAMMAR"
@@ -603,7 +975,18 @@ type SpeechRecognizeCommand struct {
 }
 
 func (cmd SpeechRecognizeCommand) Command(c context.Context) (string, error) {
-	return cmd.CommandString(), nil
+	s := []string{cmd.CommandString()}
+
+	if cmd.Prompt == "" {
+		return "", fmt.Errorf("field SpeechRecognize Prompt is required")
+	}
+	s = append(s, cmd.Prompt)
+	if cmd.Timeout == "" {
+		return "", fmt.Errorf("field SpeechRecognize Timeout is required")
+	}
+	s = append(s, cmd.Timeout)
+	s = append(s, cmd.Offset)
+	return strings.Join(s, " "), nil
 }
 func (cmd SpeechRecognizeCommand) CommandString() string {
 	return "SPEECH RECOGNIZE"

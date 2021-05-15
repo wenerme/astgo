@@ -230,8 +230,10 @@ func (c *Conn) connect(conn net.Conn) (err error) {
 		}
 		log.Info("login success")
 	}
+
 	//log.Sugar().Debug("do conn check ping")
 	// be ready
-	_, err = c.Request(amimodels.PingAction{})
+	// may not FullyBooted
+	// _, err = c.Request(amimodels.PingAction{})
 	return
 }

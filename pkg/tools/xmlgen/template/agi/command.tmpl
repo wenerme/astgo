@@ -10,7 +10,18 @@ type {{.StructName}}Command struct {
   {{end}}
 }
 func(cmd {{.StructName}}Command)Command(c context.Context) (string, error) {
-  return cmd.CommandString(),nil
+  s := []string{cmd.CommandString()}
+  {{$s := .}}
+
+  {{- range $_,$v:=.Syntax.Params}}
+    {{- if  $v.Required}}
+      if cmd.{{.Name}} == "" {
+        return "", fmt.Errorf("field {{$s.StructName}} {{.Name}} is required")
+      }
+    {{- end}}
+    s = append(s, cmd.{{.Name}})
+  {{- end}}
+  return strings.Join(s," "), nil
 }
 func(cmd {{.StructName}}Command)CommandString()string {
   return "{{.Name | upper}}"

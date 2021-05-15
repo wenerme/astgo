@@ -3,9 +3,11 @@ package agi
 import (
 	"bufio"
 	"context"
+	"github.com/pkg/errors"
 	"github.com/wenerme/astgo/agi/agimodels"
 	"io"
 	"net"
+	"strconv"
 	"strings"
 )
 
@@ -50,18 +52,25 @@ func (r *Response) Val() (string, error) {
 
 type Session struct {
 	Variables map[string]string
-
-	ctx  context.Context
-	conn net.Conn
+	r         io.Reader
+	w         io.Writer
+	ctx       context.Context
+	conn      net.Conn
 }
 
 type HandlerFunc func(session *Session)
 
-func NewSession(c context.Context, r io.Reader, w io.Writer) *Session {
+func NewSession(c context.Context, r io.Reader, w io.Writer) (*Session, error) {
 	session := &Session{
+		ctx:       c,
+		r:         r,
+		w:         w,
 		Variables: make(map[string]string),
 	}
-	s := bufio.NewScanner(r)
+	return session, session.scanVariables()
+}
+func (a *Session) scanVariables() error {
+	s := bufio.NewScanner(a.r)
 	for s.Scan() {
 		if s.Text() == "" {
 			break
@@ -69,10 +78,10 @@ func NewSession(c context.Context, r io.Reader, w io.Writer) *Session {
 
 		terms := strings.SplitN(s.Text(), ":", 2)
 		if len(terms) == 2 {
-			session.Variables[strings.TrimSpace(terms[0])] = strings.TrimSpace(terms[1])
+			a.Variables[strings.TrimSpace(terms[0])] = strings.TrimSpace(terms[1])
 		}
 	}
-	return session
+	return s.Err()
 }
 
 // Close closes any network connection associated with the AGI instance
@@ -83,8 +92,36 @@ func (a *Session) Close() (err error) {
 	}
 	return
 }
+func ParseResponse(s string) *Response {
+	sp := strings.SplitN(s, " ", 3)
+	if len(sp) < 2 {
+		return &Response{
+			Error: errors.Errorf("invalid response: %q", s),
+		}
+	}
+	r := &Response{}
+	r.Status, r.Error = strconv.Atoi(sp[0])
+	r.ResultString = sp[1][len("result="):]
+	r.Result, _ = strconv.Atoi(r.ResultString)
+	if len(sp) == 3 {
+		r.Value = sp[2]
+	}
+	if r.Status != 200 {
+		r.Error = errors.Errorf("status %v result %v extra %v", r.Status, r.ResultString, r.Value)
+	}
+	return r
+}
 func (a *Session) Command(cmd string) *Response {
-	return nil
+	_, err := a.w.Write([]byte(cmd + "\n"))
+	r := &Response{Error: err}
+	if err != nil {
+		return r
+	}
+	s := bufio.NewScanner(a.r)
+	if s.Scan() {
+		return ParseResponse(s.Text())
+	}
+	return r
 }
 func (a *Session) Client() *agimodels.Client {
 	return &agimodels.Client{
@@ -97,5 +134,31 @@ func (a *Session) Client() *agimodels.Client {
 			}
 			return a.Command(command)
 		}),
+	}
+}
+
+// Listen binds an AGI HandlerFunc to the given TCP `host:port` address, creating a FastAGI service.
+func Listen(addr string, handler HandlerFunc) error {
+	if addr == "" {
+		addr = "localhost:4573"
+	}
+
+	l, err := net.Listen("tcp", addr)
+	if err != nil {
+		return errors.Wrap(err, "failed to bind server")
+	}
+	defer l.Close() // nolint: errcheck
+
+	for {
+		conn, err := l.Accept()
+		if err != nil {
+			return errors.Wrap(err, "failed to accept TCP connection")
+		}
+
+		session, err := NewSession(nil, conn, conn)
+		if err != nil {
+			return errors.Wrap(err, "failed init session")
+		}
+		go handler(session)
 	}
 }

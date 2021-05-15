@@ -20,7 +20,7 @@ func (f HandlerFunc) Command(cmd Command) Response {
 }
 
 type Client struct {
-	Handler Handler
+	Handler
 }
 
 func (c *Client) Answer() error {
@@ -31,4 +31,7 @@ func (c *Client) Hangup() error {
 }
 func (c *Client) GetVariable(name string) (string, error) {
 	return c.Handler.Command(GetVariableCommand{VariableName: name}).Val()
+}
+func (c *Client) SetVariable(name string, value string) (string, error) {
+	return c.Handler.Command(SetVariableCommand{VariableName: name, Value: value}).Val()
 }

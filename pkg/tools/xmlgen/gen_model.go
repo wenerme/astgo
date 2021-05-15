@@ -35,6 +35,7 @@ type SyntaxDoc struct {
 type SyntaxParamDoc struct {
 	RawName     string
 	Name        string
+	Default     string
 	Required    bool
 	Description string
 	/*
