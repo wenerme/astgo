@@ -1,6 +1,9 @@
 # Asterisk to Go
 
-Libs for Go to work with Asterisk
+Libs for Golang to work with Asterisk
+
+* AMI
+* AGI
 
 ## AMI
 
@@ -46,79 +49,28 @@ func main() {
 }
 ```
 
----
+## AGI
 
-# Old
-
-## Features
-
-* AMI
-  * Async/Sync Command
-  * Event Handler
-  * Auto reconnect
-  * Generated Command with document
-  * Generated Event with document
-  * Generated Command response with document
-* ADB
-  * Go ORM for Asterisk Realtime Database
-  * Based on gorm
-
-## AMI
-
-### Basic
+* FastAGI
+* AGI Bin
+* Generated Command
+* Generated Client
 
 ```go
 package main
 
 import (
-  "fmt"
-  "github.com/wenerme/astgo/ami"
-  "time"
+	"github.com/wenerme/astgo/agi"
 )
 
 func main() {
-  ch := make(chan *ami.Command, 1024)
-
-  go func() {
-    // Event handler
-    for {
-      c, ok := <-ch
-      if !ok {
-        break
-      }
-      fmt.Println("Recv Event Name: " + c.Name())
-    }
-  }()
-
-  con, err := ami.Dial("192.168.1.2:5038", ami.DialConf{
-    Username:  "admin",
-    Secret:    "admin",
-    Listeners: []chan<- *ami.Command{ch},
-  })
-  if err != nil {
-    panic(err)
-  }
-
-  // Sync, generated action type, generated response type
-  fmt.Println("PING: ", con.WriteCommandResponse(ami.PingAction{}).(*ami.PingResponse).Ping)
-
-  // Change to you own number
-  res, err := con.WriteCommandSync(ami.OriginateAction{
-    Channel:  "sip/9001!9001@wener.me!9002@wener.me",
-    CallerID: "wener <9001>",
-    Exten:    "9002",
-    Context:  "public",
-    Priority: "1",
-    Async:    "true",
-  })
-
-  if err != nil {
-    // Response Error
-    panic(err)
-  }
-  fmt.Println("Originate ", res.Message())
-
-  // Will log some event
-  <-time.After(time.Second * 30)
+	// agi.Listen for FastAGI
+	agi.Run(func(session *agi.Session) {
+		client := session.Client()
+		client.Answer()
+		client.StreamFile("activated", "#")
+		client.SetVariable("AGISTATUS", "SUCCESS")
+		client.Hangup()
+	})
 }
 ```

@@ -1,6 +1,10 @@
 package agi
 
-import "os"
+import (
+	"context"
+	"go.uber.org/zap"
+	"os"
+)
 
 type ConfEnv struct {
 	ConfigDir  string
@@ -34,4 +38,14 @@ func LoadConfEnv() ConfEnv {
 		KeyDir:     env("AST_KEY_DIR"),
 		RunDir:     env("AST_RUN_DIR"),
 	}
+}
+
+func Run(handler HandlerFunc) {
+	ctx := context.Background()
+	session, err := NewSession(ctx, os.Stdin, os.Stdout)
+	if err != nil {
+		zap.S().With("err", err).Error("init session failed")
+		os.Exit(1)
+	}
+	handler(session)
 }
