@@ -3,28 +3,26 @@
 // {{.StructName}}Command {{.Synopsis}}
 type {{.StructName}}Command struct {
   {{- range $_,$v:=.Syntax.Params}}
-    {{.Name}} string
+    {{$v.Name}} {{with not $v.Required}}*{{end}}{{$v.Type}} {{with $v.Required}} // required {{end}}
   {{- end}}
-  {{with .Syntax.Missing}}
-  // has missing params
-  {{end}}
+  {{with .Syntax.Missing}} // has missing params {{- end}}
 }
-func(cmd {{.StructName}}Command)Command(c context.Context) (string, error) {
-  s := []string{cmd.CommandString()}
-  {{$s := .}}
-
-  {{- range $_,$v:=.Syntax.Params}}
-    {{- if  $v.Required}}
-      if cmd.{{.Name}} == "" {
-        return "", fmt.Errorf("field {{$s.StructName}} {{.Name}} is required")
-      }
-    {{- end}}
-    s = append(s, cmd.{{.Name}})
-  {{- end}}
-  return strings.Join(s," "), nil
+func(cmd {{.StructName}}Command)Command() (string, error) {
+  s := []interface{}{cmd.CommandString(),{{- range $_,$v:=.Syntax.Params}} cmd.{{.Name}}, {{- end}}}
+  return joinCommand(s), nil
 }
 func(cmd {{.StructName}}Command)CommandString()string {
   return "{{.Name | upper}}"
 }
+
+{{$s:=.}}
+{{- range $_,$v:=.Syntax.Params}}
+{{- if not $v.Required}}
+func (cmd {{$s.StructName}}Command)Set{{$v.Name}}(v {{$v.Type}}) {{$s.StructName}}Command {
+cmd.{{$v.Name}} = &v
+return cmd
+}
+{{- end}}
+{{- end}}
 
 {{- end}}

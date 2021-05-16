@@ -1,9 +1,16 @@
 package agimodels
 
-import "context"
+import (
+	"context"
+	"strconv"
+	"strings"
+)
 
 type Command interface {
-	Command(c context.Context) (string, error)
+	Command() (string, error)
+}
+type needContext interface {
+	SetContext(c context.Context)
 }
 type Response interface {
 	Err() error
@@ -34,4 +41,29 @@ func (c *Client) GetVariable(name string) (string, error) {
 }
 func (c *Client) SetVariable(name string, value string) (string, error) {
 	return c.Handler.Command(SetVariableCommand{VariableName: name, Value: value}).Val()
+}
+
+func joinCommand(s []interface{}) string {
+	sb := strings.Builder{}
+	for _, param := range s {
+		switch v := param.(type) {
+		case string:
+			sb.WriteString(v)
+		case int:
+			sb.WriteString(strconv.Itoa(v))
+		case *string:
+			if v == nil {
+				goto DONE
+			}
+			sb.WriteString(*v)
+		case *int:
+			if v == nil {
+				goto DONE
+			}
+			sb.WriteString(strconv.Itoa(*v))
+		}
+		sb.WriteRune(' ')
+	}
+DONE:
+	return strings.TrimSpace(sb.String())
 }

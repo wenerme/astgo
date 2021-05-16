@@ -32,9 +32,19 @@ type SyntaxDoc struct {
 	Missing bool
 }
 
+func (d SyntaxDoc) HasRequiredParam() bool {
+	for _, v := range d.Params {
+		if v.Required {
+			return true
+		}
+	}
+	return false
+}
+
 type SyntaxParamDoc struct {
 	RawName     string
 	Name        string
+	Type        string
 	Default     string
 	Required    bool
 	Description string

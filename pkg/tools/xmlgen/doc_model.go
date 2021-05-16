@@ -98,25 +98,38 @@ func (d *DocModel) Syntax(in *SyntaxDocModel) *SyntaxDoc {
 func (*DocModel) Parameter(in *SyntaxParameterDocModel) *SyntaxParamDoc {
 	o := &SyntaxParamDoc{
 		RawName:  in.Name,
-		Name:     fieldName(in.Name), // name not matter
 		Required: in.Required,
 	}
-	log.Println("Param", in.Name, o.Name)
+	processParameter(o)
 	return o
 }
 
-func fieldName(name string) string {
-	switch name {
+func processParameter(p *SyntaxParamDoc) {
+	rawName := p.RawName
+	var name string
+	typ := "string"
+	switch rawName {
+	case "skipms":
+		name = "SkipMS"
 	case "offsetms":
-		return "OffsetMS"
+		name = "OffsetMS"
 	case "keytree":
-		return "KeyTree"
+		name = "KeyTree"
 	}
-	// s=slicense
-	name = strings.ReplaceAll(name, "=", "-")
-	if len(name) > 4 {
-		name = strings.ReplaceAll(name, "name", "Name")
+	if name == "" {
+		name = rawName
+		// s=slicense
+		name = strings.ReplaceAll(name, "=", "-")
+		if len(name) > 4 {
+			name = strings.ReplaceAll(name, "name", "Name")
+		}
+		// xstrings VariableName -> Variablename
+		name = strcase.ToCamel(name)
 	}
-	// xstrings VariableName -> Variablename
-	return strcase.ToCamel(name)
+	switch name {
+	case "SkipMS", "OffsetMS", "SampleOffset", "Priority":
+		typ = "int"
+	}
+	p.Name = name
+	p.Type = typ
 }

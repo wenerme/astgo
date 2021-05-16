@@ -5,8 +5,10 @@ import (
 	"context"
 	"github.com/pkg/errors"
 	"github.com/wenerme/astgo/agi/agimodels"
+	"go.uber.org/zap"
 	"io"
 	"net"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -126,7 +128,7 @@ func (a *Session) Command(cmd string) *Response {
 func (a *Session) Client() *agimodels.Client {
 	return &agimodels.Client{
 		Handler: agimodels.HandlerFunc(func(cmd agimodels.Command) agimodels.Response {
-			command, err := cmd.Command(a.ctx)
+			command, err := cmd.Command()
 			if err != nil {
 				return &Response{
 					Error: err,
@@ -136,11 +138,16 @@ func (a *Session) Client() *agimodels.Client {
 		}),
 	}
 }
+func (a *Session) RequestVariable() *RequestVariable {
+	rc := &RequestVariable{}
+	rc.Load(a.Variables)
+	return rc
+}
 
 // Listen binds an AGI HandlerFunc to the given TCP `host:port` address, creating a FastAGI service.
 func Listen(addr string, handler HandlerFunc) error {
 	if addr == "" {
-		addr = "localhost:4573"
+		addr = "0.0.0.0:4573"
 	}
 
 	l, err := net.Listen("tcp", addr)
@@ -160,5 +167,109 @@ func Listen(addr string, handler HandlerFunc) error {
 			return errors.Wrap(err, "failed init session")
 		}
 		go handler(session)
+	}
+}
+
+type RequestVariable struct {
+	Request      string
+	Channel      string
+	Language     string
+	Type         string
+	UniqueID     string
+	Version      string
+	CallerID     string
+	CallerIDName string
+	CallingPres  int // presentation of callerid
+	CallingAni2  int
+	CallingTon   int    // ast_channel_caller(chan)->id.number.plan
+	CallingTns   int    // ast_channel_dialed(chan)->transit_network_select)
+	DNID         string // ast_channel_dialed(chan)->number.str
+	RDNIS        string // ast_channel_redirecting(chan)->from.number.valid, ast_channel_redirecting(chan)->from.number.str
+	Context      string
+	Extension    string
+	Priority     int
+	Enhanced     bool
+	AccountCode  string
+	ThreadID     int
+	Args         []string
+}
+
+func (rc *RequestVariable) Load(m map[string]string) {
+	var args []struct {
+		i int
+		v string
+	}
+	for k, v := range m {
+		if !strings.HasPrefix(k, "agi_") {
+			continue
+		}
+		name := k[4:]
+		if strings.HasPrefix(name, "arg_") {
+			i, err := strconv.Atoi(name[4:])
+			if err != nil {
+				//return errors.Wrapf(err, "invalid arg %v", name)
+				zap.S().With("arg", name).Warn("skip invalid request arg")
+			}
+			args = append(args, struct {
+				i int
+				v string
+			}{i: i, v: v})
+			continue
+		}
+		if v == "unknown" {
+			continue
+		}
+		var err error
+		switch name {
+		case "request":
+			rc.Request = v
+		case "channel":
+			rc.Channel = v
+		case "language":
+			rc.Language = v
+		case "type":
+			rc.Type = v
+		case "uniqueid":
+			rc.UniqueID = v
+		case "version":
+			rc.Version = v
+		case "callerid":
+			rc.CallerID = v
+		case "calleridname":
+			rc.CallerIDName = v
+		case "callingpres":
+			rc.CallingPres, err = strconv.Atoi(v)
+		case "callingani2":
+			rc.CallingAni2, err = strconv.Atoi(v)
+		case "callington":
+			rc.CallingTon, err = strconv.Atoi(v)
+		case "callingtns":
+			rc.CallingTns, err = strconv.Atoi(v)
+		case "dnid":
+			rc.DNID = v
+		case "rdnis":
+			rc.RDNIS = v
+		case "context":
+			rc.Context = v
+		case "extension":
+			rc.Extension = v
+		case "priority":
+			rc.Priority, err = strconv.Atoi(v)
+		case "enhanced":
+			rc.Enhanced = v == "1.0"
+		case "accountcode":
+			rc.AccountCode = v
+		case "threadid":
+			rc.ThreadID, err = strconv.Atoi(v)
+		}
+		if err != nil {
+			zap.S().With("err", err, "name", k, "value", v).Warn("failed to handle request variable")
+		}
+	}
+	sort.Slice(args, func(i, j int) bool {
+		return args[i].i < args[j].i
+	})
+	for _, v := range args {
+		rc.Args = append(rc.Args, v.v)
 	}
 }

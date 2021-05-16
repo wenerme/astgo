@@ -6,7 +6,16 @@ import (
 )
 
 func TestBuild(t *testing.T) {
-	command, err := HangupCommand{ChannelName: "16"}.Command(nil)
-	assert.NoError(t, err)
-	assert.Equal(t, "HANGUP 16", command)
+	for _, test := range []struct {
+		S string
+		C Command
+	}{
+		{S: "HANGUP 16", C: HangupCommand{}.SetChannelName("16")},
+		{S: "CONTROL STREAM FILE fn #", C: ControlStreamFileCommand{FileName: "fn", EscapeDigits: "#"}},
+		{S: "CONTROL STREAM FILE fn #", C: ControlStreamFileCommand{FileName: "fn", EscapeDigits: "#"}.SetPausechr("Abc")},
+	} {
+		s, err := test.C.Command()
+		assert.NoError(t, err)
+		assert.Equal(t, test.S, s)
+	}
 }

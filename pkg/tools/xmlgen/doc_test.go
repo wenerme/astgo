@@ -47,7 +47,7 @@ func TestDocParse(t *testing.T) {
 	log.Println("AGI Commands", len(d.AGICommands))
 }
 
-func TestName(t *testing.T) {
-	println(fieldName("Variablename"))
-	println(fieldName("Keytree"))
-}
+//func TestName(t *testing.T) {
+//	println(fieldName("Variablename"))
+//	println(fieldName("Keytree"))
+//}
