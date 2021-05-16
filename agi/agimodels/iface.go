@@ -1,16 +1,13 @@
 package agimodels
 
 import (
-	"context"
+	"fmt"
 	"strconv"
 	"strings"
 )
 
 type Command interface {
 	Command() (string, error)
-}
-type needContext interface {
-	SetContext(c context.Context)
 }
 type Response interface {
 	Err() error
@@ -30,19 +27,6 @@ type Client struct {
 	Handler
 }
 
-func (c *Client) Answer() error {
-	return c.Handler.Command(AnswerCommand{}).Err()
-}
-func (c *Client) Hangup() error {
-	return c.Handler.Command(HangupCommand{}).Err()
-}
-func (c *Client) GetVariable(name string) (string, error) {
-	return c.Handler.Command(GetVariableCommand{VariableName: name}).Val()
-}
-func (c *Client) SetVariable(name string, value string) (string, error) {
-	return c.Handler.Command(SetVariableCommand{VariableName: name, Value: value}).Val()
-}
-
 func joinCommand(s []interface{}) string {
 	sb := strings.Builder{}
 	for _, param := range s {
@@ -51,6 +35,8 @@ func joinCommand(s []interface{}) string {
 			sb.WriteString(v)
 		case int:
 			sb.WriteString(strconv.Itoa(v))
+		case float64:
+			sb.WriteString(fmt.Sprint(v))
 		case *string:
 			if v == nil {
 				goto DONE
@@ -61,6 +47,11 @@ func joinCommand(s []interface{}) string {
 				goto DONE
 			}
 			sb.WriteString(strconv.Itoa(*v))
+		case *float64:
+			if v == nil {
+				goto DONE
+			}
+			sb.WriteString(fmt.Sprint(*v))
 		}
 		sb.WriteRune(' ')
 	}

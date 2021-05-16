@@ -1,6 +1,9 @@
 package xmlgen
 
-import "github.com/huandu/xstrings"
+import (
+	"github.com/huandu/xstrings"
+	"strings"
+)
 
 type AstDoc struct {
 	Actions []*Type
@@ -23,8 +26,20 @@ type AGICommand struct {
 	*/
 }
 
+var nameFixReplace = strings.NewReplacer("Callerid", "CallerID")
+
 func (a AGICommand) StructName() string {
-	return xstrings.ToCamelCase(a.Name)
+	switch a.Name {
+	case "set autohangup":
+		return "SetAutoHangup"
+	case "asyncagi break":
+		return "AsyncAGIBreak"
+	case "database deltree":
+		return "DatabaseDelTree"
+	}
+	name := xstrings.ToCamelCase(a.Name)
+	name = nameFixReplace.Replace(name)
+	return name
 }
 
 type SyntaxDoc struct {

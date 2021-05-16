@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 	"github.com/iancoleman/strcase"
 	"log"
+	"regexp"
 	"strings"
 )
 
@@ -79,7 +80,11 @@ func (d *DocModel) AgiModel(in AgiDocModel) *AGICommand {
 		Synopsis: strings.TrimSpace(in.Synopsis),
 		Syntax:   d.Syntax(&in.Syntax),
 	}
-
+	var p []string
+	for _, v := range in.Description.Para {
+		p = append(p, v.Data)
+	}
+	o.Description = formatParas(p)
 	return o
 }
 func (d *DocModel) Syntax(in *SyntaxDocModel) *SyntaxDoc {
@@ -95,10 +100,55 @@ func (d *DocModel) Syntax(in *SyntaxDocModel) *SyntaxDoc {
 	}
 	return o
 }
+
+var regDefaultTo = regexp.MustCompile(`Defaults to\s*<literal>(.*?)</literal>`)
+
+func parseParaDefaultTo(s string) string {
+	sub := regDefaultTo.FindStringSubmatch(s)
+	if len(sub) > 1 {
+		return sub[1]
+	}
+	return ""
+}
+
+var regIndent = regexp.MustCompile(`(?m)^\s+`)
+
+func deindent(s string) string {
+	return regIndent.ReplaceAllString(s, "")
+}
+
+var paraTagReplace = strings.NewReplacer(
+	"<literal>", "`", "</literal>", "`",
+	"<directory>", "`", "</directory>", "`",
+	"<filename>", " ", "</filename>", " ",
+	"<replaceable>", " ", "</replaceable>", " ",
+	"\n", " ",
+)
+
+func formatParas(s []string) string {
+	sb := strings.Builder{}
+	for _, v := range s {
+		sb.WriteString(formatPara(v))
+		sb.WriteString("\n\n")
+	}
+	return strings.TrimSpace(sb.String())
+}
+func formatPara(s string) string {
+	s = deindent(s)
+	return paraTagReplace.Replace(s)
+}
 func (*DocModel) Parameter(in *SyntaxParameterDocModel) *SyntaxParamDoc {
 	o := &SyntaxParamDoc{
 		RawName:  in.Name,
 		Required: in.Required,
+	}
+	para := strings.TrimSpace(in.Para.Data)
+	if para != "" {
+		o.Default = parseParaDefaultTo(para)
+		if o.Default == "" {
+			// description
+			o.Description = formatPara(para)
+		}
 	}
 	processParameter(o)
 	return o
@@ -127,8 +177,10 @@ func processParameter(p *SyntaxParamDoc) {
 		name = strcase.ToCamel(name)
 	}
 	switch name {
-	case "SkipMS", "OffsetMS", "SampleOffset", "Priority":
+	case "SkipMS", "OffsetMS", "SampleOffset", "Priority", "Timeout":
 		typ = "int"
+	case "Time": // AutoHangup
+		typ = "float64"
 	}
 	p.Name = name
 	p.Type = typ

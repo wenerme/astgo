@@ -1,9 +1,13 @@
 {{/* gotype: github.com/wenerme/astgo/pkg/tools/xmlgen.AGICommand*/}}
 {{- define "agi/command"}}
 // {{.StructName}}Command {{.Synopsis}}
+{{- with .Description}}
+// {{end}}
+{{- with .Description}}{{template "comment" .}} {{end}}
 type {{.StructName}}Command struct {
   {{- range $_,$v:=.Syntax.Params}}
-    {{$v.Name}} {{with not $v.Required}}*{{end}}{{$v.Type}} {{with $v.Required}} // required {{end}}
+    {{- with $v.Description}} {{template "comment" (printf "%v %v" $v.Name .)}} {{end}}
+    {{$v.Name}} {{with not $v.Required}}*{{end}}{{$v.Type}} {{with $v.Default}} // default to {{$v.Default}} {{end}}
   {{- end}}
   {{with .Syntax.Missing}} // has missing params {{- end}}
 }
@@ -24,5 +28,19 @@ return cmd
 }
 {{- end}}
 {{- end}}
+
+func (c *Client) {{$s.StructName}}(
+{{- range $_,$v:=.Syntax.Params -}}
+  {{- if $v.Required}} {{$v.Name | untitle}} {{$v.Type}}, {{- end -}}
+{{- end -}}
+) Response {
+return c.Handler.Command({{$s.StructName}}Command{
+{{- range $_,$v:=.Syntax.Params}}
+  {{- if $v.Required}}
+    {{$v.Name}}: {{$v.Name | untitle}},
+  {{- end}}
+{{- end}}
+})
+}
 
 {{- end}}
