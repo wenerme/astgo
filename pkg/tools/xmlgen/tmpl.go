@@ -215,7 +215,9 @@ func GoFormatter(f *File) (err error) {
 	}
 	return
 }
-
+func ReportFile(f *File) {
+	log.Println(f.Name, "\n", lineNumber(string(f.Content)))
+}
 func lineNumber(s string) string {
 	lines := strings.Split(s, "\n")
 	c := strings.Builder{}

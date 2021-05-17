@@ -1,4 +1,4 @@
-package adb
+package astdb
 
 import "time"
 
@@ -37,4 +37,13 @@ type CallDetailRecord struct {
 
 func (CallDetailRecord) TableName() string {
 	return "cdr"
+}
+
+type Extension struct {
+	ID       int `gorm:"primary_key"`
+	Context  string
+	Exten    string
+	Priority int
+	App      string
+	AppData  string
 }
