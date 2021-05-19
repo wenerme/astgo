@@ -5,6 +5,7 @@ import (
 	"context"
 	"embed"
 	"fmt"
+	"github.com/Masterminds/goutils"
 	"github.com/pkg/errors"
 	"go/format"
 	"golang.org/x/tools/imports"
@@ -29,6 +30,9 @@ func MustParseTemplates() *template.Template {
 			//Funcs(gen.Funcs).
 			//Funcs(ext).
 			Funcs(sprig.TxtFuncMap()).
+			Funcs(map[string]interface{}{
+				"ParamName": ParamName,
+			}).
 			//Funcs(Funcs).
 			ParseFS(templateFS, "template/*.tmpl", "template/**/*.tmpl"),
 	)
@@ -68,9 +72,17 @@ func NewAGIGenerator() *Generator {
 		Template:  MustParseTemplates(),
 		Formatter: GoFormatter,
 		Templates: []TemplateGenerate{
+			//&GenerateTemplate{
+			//	Name:       "agi/commands",
+			//	FormatName: "commands.go",
+			//},
 			&GenerateTemplate{
-				Name:       "agi/commands",
-				FormatName: "commands.go",
+				Name:       "ami/actions",
+				FormatName: "ami/amimodels/actions.go",
+			},
+			&GenerateTemplate{
+				Name:       "ami/events",
+				FormatName: "ami/amimodels/events.go",
 			},
 		},
 	}
@@ -227,4 +239,13 @@ func lineNumber(s string) string {
 		c.WriteRune('\n')
 	}
 	return c.String()
+}
+
+func ParamName(s string) string {
+	s = goutils.Uncapitalize(s)
+	switch s {
+	case "interface":
+		s = "iface"
+	}
+	return s
 }

@@ -44,3 +44,9 @@ return c.Handler.Command({{$s.StructName}}Command{
 }
 
 {{- end}}
+
+{{/* gotype: github.com/wenerme/astgo/pkg/tools/xmlgen.SyntaxParamDoc*/}}
+{{- define "agi/command/field"}}
+  {{- with .Description}} {{template "comment" (printf "%v %v" $.Name .)}} {{end}}
+  {{$.Name}} {{with not $.Required}}*{{end}}{{$.Type}} {{with $.Default}} // default to {{$.Default}} {{end}}
+{{- end}}

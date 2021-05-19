@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
-	amimodels "github.com/wenerme/astgo/ami/models"
+	"github.com/wenerme/astgo/ami/amimodels"
 	"io"
 	"strings"
 )

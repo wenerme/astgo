@@ -11,19 +11,45 @@ type AstDoc struct {
 }
 type Model struct {
 	AGICommands []*AGICommand
+	Actions     []*ManagerAction
+	Events      []*ManagerEvent
 }
 type AGICommand struct {
 	Name        string
 	Module      string
-	Syntax      *SyntaxDoc
+	Syntax      *Syntax
 	Synopsis    string
 	Description string
-	// synopsis?,syntax?,description?,see-also?
-	/*
-	   <see-also>
-	     <ref type="application">AGI</ref>
-	   </see-also>
-	*/
+	SeeAlso     []*SeeAlso
+}
+type ManagerAction struct {
+	Name        string
+	Synopsis    string
+	Syntax      *Syntax
+	Description string
+	Response    *ManagerEvent
+	SeeAlso     []*SeeAlso
+	Responses   []*ManagerEvent
+}
+
+func (m ManagerAction) StructName() string {
+	return validGoTypeName(m.Name) + "Action"
+}
+
+type ManagerEvent struct {
+	Name     string
+	Synopsis string
+	Syntax   *Syntax
+	SeeAlso  []*SeeAlso
+}
+
+func (m ManagerEvent) StructName() string {
+	return validGoTypeName(m.Name) + "Event"
+}
+
+type SeeAlso struct {
+	Type string
+	Name string
 }
 
 var nameFixReplace = strings.NewReplacer("Callerid", "CallerID")
@@ -42,12 +68,12 @@ func (a AGICommand) StructName() string {
 	return name
 }
 
-type SyntaxDoc struct {
-	Params  []*SyntaxParamDoc
+type Syntax struct {
+	Params  []*Parameter
 	Missing bool
 }
 
-func (d SyntaxDoc) HasRequiredParam() bool {
+func (d Syntax) HasRequiredParam() bool {
 	for _, v := range d.Params {
 		if v.Required {
 			return true
@@ -56,7 +82,7 @@ func (d SyntaxDoc) HasRequiredParam() bool {
 	return false
 }
 
-type SyntaxParamDoc struct {
+type Parameter struct {
 	RawName     string
 	Name        string
 	Type        string

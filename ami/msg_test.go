@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"github.com/stretchr/testify/assert"
-	amimodels "github.com/wenerme/astgo/ami/models"
+	"github.com/wenerme/astgo/ami/amimodels"
 	"io"
 	"sort"
 	"strings"

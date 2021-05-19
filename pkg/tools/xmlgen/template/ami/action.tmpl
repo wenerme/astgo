@@ -1,0 +1,56 @@
+{{/* gotype: github.com/wenerme/astgo/pkg/tools/xmlgen.ManagerAction*/}}
+{{- define "ami/action"}}
+{{with .Synopsis}} {{template "comment" (printf "%v %v" $.StructName .)}} {{end}}
+type {{.StructName}} struct {
+  {{- template "ami/fields" .}}
+}
+func({{.StructName}})ActionTypeName() string{
+  return "{{.Name}}"
+}
+func(a {{.StructName}})GetActionID() string{
+  return a.ActionID
+}
+func(a*{{.StructName}})SetActionID(actionID string) {
+   a.ActionID = actionID
+}
+{{- if eq (len .Responses) 1}}
+func(cli*Client){{.Name}}(req {{.StructName}},opts ...RequestOption)(res *{{(index .Responses 0).StructName}}, err error) {
+  req := &{{.StructName}}{
+{{- range $_,$v:=.Syntax.Params}}
+  {{- if $v.Required}}
+    {{$v.Name}}: {{$v.Name | untitle}},
+  {{- end}}
+{{- end}}
+}
+  res = &{{(index .Responses 0).StructName}}{}
+  return res, cli.Action(req,res)
+}
+{{- end}}
+{{- if eq (len .Responses) 0}}
+func(cli*Client){{.Name}}({{- range $_,$v:=.Syntax.Params -}}
+  {{- if $v.Required}} {{$v.Name | ParamName}} {{$v.Type}}, {{- end -}}
+{{- end -}} opts ...RequestOption)(res *Response, err error) {
+  req := &{{.StructName}}{
+{{- range $_,$v:=.Syntax.Params}}
+  {{- if $v.Required}}
+    {{$v.Name}}: {{$v.Name | ParamName}},
+  {{- end}}
+{{- end}}
+}
+  res = &Response{}
+  return res, cli.Action(req,res,opts...)
+}
+{{- end}}
+{{- end}}
+
+{{- define "comment"}}
+{{regexReplaceAllLiteral "(?m)^" (. | trim) "// "}}
+{{- end}}
+
+{{- define "ami/fields" -}}
+  {{- range $_,$v:=.Syntax.Params -}}
+    {{- with $v.Description}} {{template "comment" (printf "%v %v" $v.Name .)}} {{end}}
+    {{$v.Name}} {{$v.Type}} {{with $v.Default}} // default to {{$v.Default}} {{end}}
+  {{- end}}
+  {{with .Syntax.Missing}} // has missing params {{- end}}
+{{- end}}

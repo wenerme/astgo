@@ -35,9 +35,3 @@ func TestParse(t *testing.T) {
 		panic(err)
 	}
 }
-
-func BuildModel(in *DocModel, out *Model) {
-	for _, v := range in.Agi {
-		out.AGICommands = append(out.AGICommands, in.AgiModel(v))
-	}
-}

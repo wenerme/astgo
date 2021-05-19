@@ -1,10 +1,11 @@
 package xmlgen
 
-//go:generate gomodifytags -file=doc_test.go -w -all -add-tags json -transform camelcase --skip-unexported -add-options json=omitempty
 import (
 	"context"
+	"encoding/json"
 	"encoding/xml"
 	log "github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
 )
@@ -33,12 +34,25 @@ func TestDocParse(t *testing.T) {
 	d := &Model{}
 	BuildModel(&doc, d)
 
+	{
+		b, err := json.MarshalIndent(doc, "", "  ")
+		assert.NoError(t, err)
+		err = os.WriteFile("doc.json", b, 0644)
+		assert.NoError(t, err)
+	}
+	{
+		b, err := json.MarshalIndent(d, "", "  ")
+		assert.NoError(t, err)
+		err = os.WriteFile("gen.json", b, 0644)
+		assert.NoError(t, err)
+	}
+
 	err := ge.Generate(context.Background(), d)
 	if err != nil {
 		panic(err)
 	}
 	err = ge.Write(WriteConfig{
-		Target: "./../../../agi/agimodels",
+		Target: "./../../../",
 		//DryRun: true,
 	})
 	if err != nil {

@@ -13,10 +13,7 @@ Libs for Golang to work with Asterisk
 * Auto Reconnect
 * Generated Action with document
 * Generated Event with document
-* [ ] Generated action Response with document
-* [ ] Generated client - Request -> Response
-* Improved doc
-  * Proper handle para to doc
+* Generated Client - Action -> Response
 
 ```go
 package main
@@ -74,3 +71,11 @@ func main() {
 	})
 }
 ```
+
+## Asterisk Database Model
+* GORM Based Model
+
+## Roadmap
+* [-] Asterisk Database Model
+* [ ] Stasis
+* [ ] ARI

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	amimodels "github.com/wenerme/astgo/ami/models"
+	"github.com/wenerme/astgo/ami/amimodels"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 	"net"
@@ -101,7 +101,11 @@ func (c *Conn) Close() error {
 		c.closed = true
 		c.closer()
 		c.closer = nil
-		return c.g.Wait()
+		err := c.g.Wait()
+		if errors.Is(err, errClose) {
+			return nil
+		}
+		return err
 	}
 	if c.closed {
 		return nil
@@ -166,6 +170,9 @@ func (c *Conn) dialOnce(addr string) (err error) {
 	}()
 	return c.connect(conn)
 }
+
+var errClose = errors.New("Close")
+
 func (c *Conn) connect(conn net.Conn) (err error) {
 	log := c.logger
 	r := bufio.NewReader(conn)
@@ -207,7 +214,7 @@ func (c *Conn) connect(conn net.Conn) (err error) {
 	})
 	c.g.Go(func() error {
 		<-waitCtx.Done()
-		return errors.New("close")
+		return errClose
 	})
 	c.closer = closer
 
@@ -215,7 +222,7 @@ func (c *Conn) connect(conn net.Conn) (err error) {
 	if conf.Username != "" {
 		var resp *Message
 		resp, err = c.Request(amimodels.LoginAction{
-			Username: conf.Username,
+			UserName: conf.Username,
 			Secret:   conf.Secret,
 		}, RequestTimeout(2*time.Second))
 
