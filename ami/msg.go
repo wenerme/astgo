@@ -25,7 +25,9 @@ type Message struct {
 	Attributes map[string]interface{}
 }
 
-func (m *Message) Read(r *bufio.Reader) (err error) {
+func ReadMessage(m *Message, rd io.Reader) (err error) {
+	r := bufio.NewReader(rd)
+
 	m.Attributes = map[string]interface{}{}
 	var line string
 	line, err = r.ReadString('\n')
@@ -92,7 +94,7 @@ func (m *Message) Read(r *bufio.Reader) (err error) {
 	}
 	return
 }
-func (m *Message) Write(w io.Writer) (err error) {
+func WriteMessage(m *Message, w io.Writer) (err error) {
 	wr := bufio.NewWriter(w)
 	_, _ = wr.WriteString(fmt.Sprintf("%v: %v\r\n", m.Type, m.Name))
 	for k, v := range m.Attributes {
@@ -101,6 +103,13 @@ func (m *Message) Write(w io.Writer) (err error) {
 	_, _ = wr.WriteString("\r\n")
 	err = wr.Flush()
 	return
+}
+
+func (m *Message) Read(r *bufio.Reader) (err error) {
+	return ReadMessage(m, r)
+}
+func (m *Message) Write(w io.Writer) (err error) {
+	return WriteMessage(m, w)
 }
 
 func (m Message) Format() string {
@@ -175,9 +184,13 @@ func ConvertToMessage(in interface{}) (msg *Message, err error) {
 	// remove zero
 	for k, v := range m {
 		rm := v == nil
+
+		// NOTE support require tag, prevent remove required empty value ?
 		switch v := v.(type) {
 		case string:
 			rm = v == ""
+		case int:
+			rm = v == 0
 		}
 		if rm {
 			delete(m, k)
