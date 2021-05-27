@@ -9,5 +9,5 @@ lint:
 	golangci-lint run
 
 ci:
-	go test -race -coverprofile=coverage.txt -covermode=atomic
-	[ -z "$CODECOV_TOKEN" ] || bash <(curl -s https://codecov.io/bash)
+	go test -race -coverprofile=coverage.txt -covermode=atomic ./...
+	[ -n "$CODECOV_TOKEN" ] || bash -c 'bash <(curl -s https://codecov.io/bash)'

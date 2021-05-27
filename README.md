@@ -1,4 +1,4 @@
-# Asterisk to Go [![GoDoc][doc-img]][doc] [![Go Report Card][report-card-img]][report-card]
+# Asterisk to Go [![GoDoc][doc-img]][doc] [![Build Status][ci-img]][ci] [![Coverage Status][cov-img]][cov]  [![Go Report Card][report-card-img]][report-card]
 
 Libs for Golang to work with Asterisk
 
@@ -7,6 +7,12 @@ Libs for Golang to work with Asterisk
 
 [doc-img]: http://img.shields.io/badge/GoDoc-Reference-blue.svg
 [doc]: https://pkg.go.dev/github.com/wenerme/astgo
+
+[ci-img]: https://github.com/wenerme/astgo/actions/workflows/ci.yml/badge.svg
+[ci]: https://github.com/wenerme/astgo/actions/workflows/ci.yml
+
+[cov-img]: https://codecov.io/gh/wenerme/astgo/branch/master/graph/badge.svg
+[cov]: https://codecov.io/gh/wenerme/astgo/branch/master
 
 [report-card-img]: https://goreportcard.com/badge/github.com/wenerme/astgo
 [report-card]: https://goreportcard.com/report/github.com/wenerme/astgo
