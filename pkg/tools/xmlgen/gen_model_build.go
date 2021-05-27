@@ -3,7 +3,6 @@ package xmlgen
 import (
 	"fmt"
 	"reflect"
-	"regexp"
 )
 
 func BuildModel(in *DocModel, out *Model) {
@@ -47,9 +46,6 @@ func BuildModel(in *DocModel, out *Model) {
 
 	// add missing ActionID
 	for _, v := range out.Actions {
-		if len(v.Syntax.Params) == 0 {
-
-		}
 		found := false
 		for _, v := range v.Syntax.Params {
 			if found = v.Name == "ActionID"; found {
@@ -66,8 +62,6 @@ func BuildModel(in *DocModel, out *Model) {
 		}
 	}
 }
-
-var regInvalid = regexp.MustCompile(`[- ]|\(.*?\)`)
 
 func validGoTypeName(s string) string {
 	s = invalid.ReplaceAllLiteralString(s, "")

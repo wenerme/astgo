@@ -1,8 +1,9 @@
 package xmlgen
 
 import (
-	"github.com/huandu/xstrings"
 	"strings"
+
+	"github.com/huandu/xstrings"
 )
 
 type AstDoc struct {

@@ -88,13 +88,13 @@ func BuildAstDoc(doc *Docs, d *AstDoc) {
 				name := p.Name
 				fieldName := goName(name)
 
-				field, dup := byFieldName[typ.Name][fieldName]
+				_, dup := byFieldName[typ.Name][fieldName]
 				if dup {
 					log.Println("duplicate field", typ.Name, fieldName)
 					continue
 				}
 
-				field = &Field{
+				field := &Field{
 					Name:     fieldName,
 					Required: p.Required != "",
 					// Default:  p.Default,

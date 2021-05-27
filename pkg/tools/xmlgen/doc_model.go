@@ -5,14 +5,14 @@ package xmlgen
 import (
 	"encoding/xml"
 	"fmt"
-	"github.com/iancoleman/strcase"
 	"log"
 	"regexp"
 	"strings"
+
+	"github.com/iancoleman/strcase"
 )
 
 type AgiDocModel struct {
-	//Text        string           `xml:",chardata"`
 	Name        string            `xml:"name,attr" json:"name,omitempty"`
 	Language    string            `xml:"language,attr" json:"language,omitempty"`
 	Synopsis    string            `xml:"synopsis" json:"synopsis,omitempty"`
@@ -77,7 +77,6 @@ type SyntaxDocModel struct {
 	} `xml:"bridge_snapshot"`
 }
 type SyntaxParameterDocModel struct {
-	//Text     string        `xml:",chardata"`
 	Name     string         `xml:"name,attr" json:"name,omitempty"`
 	Required bool           `xml:"required,attr" json:"required,omitempty"`
 	Para     ParaRaw        `xml:"para" json:"para,omitempty"`

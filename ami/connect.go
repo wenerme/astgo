@@ -4,15 +4,16 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"net"
+	"regexp"
+	"sync/atomic"
+	"time"
+
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/wenerme/astgo/ami/amimodels"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
-	"net"
-	"regexp"
-	"sync/atomic"
-	"time"
 )
 
 // CustomDialer can be used to specify any dialer, not necessarily

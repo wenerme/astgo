@@ -2,33 +2,6 @@ package astdb
 
 import "database/sql"
 
-//type YesNo string
-//
-//const (
-//	Yes YesNo = "yes"
-//	No  YesNo = "no"
-//)
-//
-//type PjsipTransportProtocol string
-//type PjsipTransportMethod string
-//
-//const (
-//	PjsipTransportProtocolUDP PjsipTransportProtocol = "udp"
-//	PjsipTransportProtocolTCP PjsipTransportProtocol = "tcp"
-//	PjsipTransportProtocolTLS PjsipTransportProtocol = "tls"
-//	PjsipTransportProtocolWS  PjsipTransportProtocol = "ws"
-//	PjsipTransportProtocolWSS PjsipTransportProtocol = "wss"
-//)
-//
-//const (
-//	PjsipTransportMethodDefault     PjsipTransportProtocol = "default"
-//	PjsipTransportMethodUnspecified PjsipTransportProtocol = "unspecified"
-//	PjsipTransportMethodTLSv1       PjsipTransportProtocol = "tlsv1"
-//	PjsipTransportMethodSSLv2       PjsipTransportProtocol = "sslv2"
-//	PjsipTransportMethodSSLv3       PjsipTransportProtocol = "sslv3"
-//	PjsipTransportMethodSSLv23      PjsipTransportProtocol = "sslv23"
-//)
-
 type PsAor struct {
 	ID      string `gorm:"primary_key"`
 	Contact sql.NullString

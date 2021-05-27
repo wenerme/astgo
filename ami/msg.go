@@ -4,11 +4,12 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"io"
+	"strings"
+
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"github.com/wenerme/astgo/ami/amimodels"
-	"io"
-	"strings"
 )
 
 type MessageType string

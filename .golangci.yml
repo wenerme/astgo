@@ -1,0 +1,67 @@
+run:
+  skip-dirs-use-default: true
+  skip-dirs:
+    - vendor
+    - ent
+    - graph
+  skip-files:
+    - ".*\\.peg\\.go$"
+    - ".*ignored_.*.go$"
+    - "generated.go$"
+    - model_gen.go
+
+linters:
+  disable-all: true
+  enable:
+    - bodyclose
+    - depguard
+    - dogsled
+    - dupl
+    - funlen
+    - goconst
+    - gocritic
+    - gocyclo
+    - gofmt
+    - goimports
+    - golint
+    - gomnd
+    - gosec
+    # - interfacer
+    - misspell
+    - unconvert
+
+    # default
+    - deadcode
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - structcheck
+    - typecheck
+    - unused
+    - varcheck
+
+linters-settings:
+  dupl:
+    threshold: 100
+  funlen:
+    lines: 100
+    statements: 60
+  depguard:
+    list-type: blacklist
+    packages:
+      - golang.org/x/net/context
+      - github.com/sirupsen/logrus
+      - github.com/prometheus/common/log
+
+issues:
+  # Excluding configuration per-path, per-linter, per-text and per-source
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - gomnd
+    # https://github.com/go-critic/go-critic/issues/926
+    - linters:
+        - gocritic
+      text: "unnecessaryDefer:"

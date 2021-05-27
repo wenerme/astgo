@@ -1,9 +1,15 @@
-# Asterisk to Go
+# Asterisk to Go [![GoDoc][doc-img]][doc] [![Go Report Card][report-card-img]][report-card]
 
 Libs for Golang to work with Asterisk
 
 * AMI
 * AGI
+
+[doc-img]: http://img.shields.io/badge/GoDoc-Reference-blue.svg
+[doc]: https://pkg.go.dev/github.com/wenerme/astgo
+
+[report-card-img]: https://goreportcard.com/badge/github.com/wenerme/astgo
+[report-card]: https://goreportcard.com/report/github.com/wenerme/astgo
 
 ## AMI
 

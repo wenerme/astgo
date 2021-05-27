@@ -3,10 +3,11 @@ package ami
 import (
 	"bufio"
 	"context"
-	"go.uber.org/zap"
-	"golang.org/x/sync/errgroup"
 	"net"
 	"sync"
+
+	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 )
 
 type Conn struct {

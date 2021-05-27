@@ -5,19 +5,17 @@ import (
 	"context"
 	"embed"
 	"fmt"
-	"github.com/Masterminds/goutils"
-	"github.com/pkg/errors"
 	"go/format"
-	"golang.org/x/tools/imports"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"text/template"
-)
 
-import (
+	"github.com/Masterminds/goutils"
 	"github.com/Masterminds/sprig"
+	"github.com/pkg/errors"
+	"golang.org/x/tools/imports"
 )
 
 //go:embed template/*.tmpl template/**/*.tmpl
@@ -41,14 +39,6 @@ func MustParseTemplates() *template.Template {
 	//	FuncMap:  gen.Funcs,
 	//}
 	return tpl
-}
-
-func pick(funcs template.FuncMap, names ...string) template.FuncMap {
-	o := make(template.FuncMap)
-	for _, v := range names {
-		o[v] = funcs[v]
-	}
-	return o
 }
 
 func NewAMIGenerator() *Generator {

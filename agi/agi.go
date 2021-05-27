@@ -3,14 +3,15 @@ package agi
 import (
 	"bufio"
 	"context"
-	"github.com/pkg/errors"
-	"github.com/wenerme/astgo/agi/agimodels"
-	"go.uber.org/zap"
 	"io"
 	"net"
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/pkg/errors"
+	"github.com/wenerme/astgo/agi/agimodels"
+	"go.uber.org/zap"
 )
 
 const (

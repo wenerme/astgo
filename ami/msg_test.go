@@ -3,12 +3,13 @@ package ami
 import (
 	"bufio"
 	"bytes"
-	"github.com/stretchr/testify/assert"
-	"github.com/wenerme/astgo/ami/amimodels"
 	"io"
 	"sort"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/wenerme/astgo/ami/amimodels"
 )
 
 func TestMsgIO(t *testing.T) {

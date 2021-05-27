@@ -3,15 +3,16 @@ package astdb_test
 import (
 	"bytes"
 	"fmt"
-	"github.com/iancoleman/strcase"
-	"github.com/stretchr/testify/assert"
-	"github.com/wenerme/astgo/pkg/tools/xmlgen"
 	"os"
 	"regexp"
 	"sort"
 	"strings"
 	"testing"
 	"text/template"
+
+	"github.com/iancoleman/strcase"
+	"github.com/stretchr/testify/assert"
+	"github.com/wenerme/astgo/pkg/tools/xmlgen"
 )
 
 func TestEnumGen(t *testing.T) {
