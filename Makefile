@@ -10,4 +10,4 @@ lint:
 
 ci:
 	go test -race -coverprofile=coverage.txt -covermode=atomic ./...
-	[ -n "$CODECOV_TOKEN" ] || bash -c 'bash <(curl -s https://codecov.io/bash)'
+	[ -z "$(CODECOV_TOKEN)" ] || bash -c 'bash <(curl -s https://codecov.io/bash)'
