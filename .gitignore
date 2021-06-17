@@ -73,6 +73,7 @@ ignored
 dist
 .DS_Store
 ignored*
+*ignored_test.go
 bin/
 /sparkle.yaml
 *.local

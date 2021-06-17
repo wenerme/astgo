@@ -35,7 +35,11 @@ func ReadMessage(m *Message, rd io.Reader) (err error) {
 	if err != nil {
 		return err
 	}
+RETRY:
 	line = strings.TrimSuffix(line, "\r\n")
+	if line == "" {
+		goto RETRY
+	}
 	sp := strings.SplitN(line, ":", 2)
 	if len(sp) != 2 {
 		return errors.Errorf("invalid type line read: %q", line)

@@ -1,13 +1,12 @@
-package main
+package ami_test
 
 import (
 	"context"
 	"fmt"
-
 	"github.com/wenerme/astgo/ami"
 )
 
-func main() {
+func ExampleConnect() {
 	boot := make(chan *ami.Message, 1)
 
 	conn, err := ami.Connect(

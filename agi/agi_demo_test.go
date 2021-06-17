@@ -1,10 +1,8 @@
-package main
+package agi_test
 
-import (
-	"github.com/wenerme/astgo/agi"
-)
+import "github.com/wenerme/astgo/agi"
 
-func main() {
+func ExampleRun() {
 	agi.Run(func(session *agi.Session) {
 		client := session.Client()
 		client.Answer()

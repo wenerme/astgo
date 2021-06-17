@@ -1,0 +1,6 @@
+ignore:
+  - pkg/tools
+  - astdb # not ready yet
+  # generated
+  - ami/amimodels
+  - agi/agimodels
