@@ -43,7 +43,7 @@ func LoadConfEnv() ConfEnv {
 
 func Run(handler HandlerFunc) {
 	ctx := context.Background()
-	session, err := NewSession(ctx, os.Stdin, os.Stdout)
+	session, err := NewSession(ctx, os.Stdin, os.Stdout, nil)
 	if err != nil {
 		zap.S().With("err", err).Error("init session failed")
 		os.Exit(1)

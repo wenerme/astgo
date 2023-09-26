@@ -63,11 +63,12 @@ type Session struct {
 
 type HandlerFunc func(session *Session)
 
-func NewSession(c context.Context, r io.Reader, w io.Writer) (*Session, error) {
+func NewSession(c context.Context, r io.Reader, w io.Writer, conn net.Conn) (*Session, error) {
 	session := &Session{
 		ctx:       c,
 		r:         r,
 		w:         w,
+		conn:      conn,
 		Variables: make(map[string]string),
 	}
 	return session, session.scanVariables()
@@ -163,11 +164,14 @@ func Listen(addr string, handler HandlerFunc) error {
 			return errors.Wrap(err, "failed to accept TCP connection")
 		}
 
-		session, err := NewSession(nil, conn, conn)
+		session, err := NewSession(nil, conn, conn, conn)
 		if err != nil {
 			return errors.Wrap(err, "failed init session")
 		}
-		go handler(session)
+		go func() {
+			defer session.Close()
+			handler(session)
+		}()
 	}
 }
 
