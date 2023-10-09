@@ -161,6 +161,15 @@ func (m *Message) SetAttr(name string, val interface{}) {
 	m.Attributes[name] = val
 }
 
+func (m *Message) HasAttr(name string) bool {
+	if m.Attributes == nil {
+		return false
+	}
+
+	_, exists := m.Attributes[name]
+	return exists
+}
+
 func MustConvertToMessage(in interface{}) (msg *Message) {
 	m, err := ConvertToMessage(in)
 	if err != nil {

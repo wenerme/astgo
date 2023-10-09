@@ -62,7 +62,9 @@ func (c *Conn) Request(r interface{}, opts ...RequestOption) (resp *Message, err
 		}
 	}
 
-	msg.SetAttr(attrActionID, async.id)
+	if !msg.HasAttr(attrActionID) {
+		msg.SetAttr(attrActionID, async.id)
+	}
 
 	if async.cb == nil {
 		var cancel context.CancelFunc
