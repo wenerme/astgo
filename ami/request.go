@@ -12,6 +12,7 @@ const attrActionID = "ActionID"
 type requestOptions struct {
 	Timeout    time.Duration
 	OnComplete func(ctx context.Context, msg *Message, err error)
+	NextId     func() string
 }
 type RequestOption func(o *requestOptions) error
 
@@ -30,6 +31,15 @@ func RequestResponseCallback(cb func(ctx context.Context, msg *Message, err erro
 	}
 }
 
+func NextIdCallback(nextId string) RequestOption {
+	return func(o *requestOptions) error {
+		o.NextId = func() string {
+			return nextId
+		}
+		return nil
+	}
+}
+
 func (c *Conn) Request(r interface{}, opts ...RequestOption) (resp *Message, err error) {
 	var msg *Message
 	msg, err = ConvertToMessage(r)
@@ -41,19 +51,21 @@ func (c *Conn) Request(r interface{}, opts ...RequestOption) (resp *Message, err
 	}
 
 	async := &asyncMsg{
-		id:     c.nextID(),
 		msg:    msg,
 		result: make(chan *asyncMsg, 1),
 		ctx:    context.Background(),
 	}
 	o := requestOptions{
 		Timeout: time.Second * 30,
+		NextId:  c.nextID,
 	}
 	for _, opt := range opts {
 		if err = opt(&o); err != nil {
 			return
 		}
 	}
+
+	async.id = o.NextId()
 
 	onComplete := o.OnComplete
 	if onComplete != nil {
